@@ -17,6 +17,7 @@ use Phai\Core\Http\Response;
 final class Pdf
 {
     private const SEARCH = [
+        '/usr/local/sbin/phai-pdf',
         'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
         'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
         'C:/Program Files/Google/Chrome/Application/chrome.exe',
@@ -68,32 +69,48 @@ final class Pdf
         file_put_contents($page, preg_replace('/<head>/i', '<head><base href="' . htmlspecialchars($origin . '/') . '">', $html, 1));
 
         try {
-            $process = proc_open([
-                $browser, '--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check', '--disable-extensions',
-                '--no-pdf-header-footer', '--run-all-compositor-stages-before-draw', '--virtual-time-budget=5000',
-                '--user-data-dir=' . "$dir/profile", '--print-to-pdf=' . $pdf, 'file:///' . ltrim(str_replace('\\', '/', $page), '/'),
-            ], [['pipe', 'r'], ['pipe', 'w'], ['pipe', 'w']], $pipes);
+            $isPhaiPdf = str_ends_with(str_replace('\\', '/', $browser), 'phai-pdf');
+            $command = $isPhaiPdf
+                ? [$browser, $page, $pdf]
+                : [
+                    $browser, '--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check', '--disable-extensions',
+                    '--no-pdf-header-footer', '--run-all-compositor-stages-before-draw', '--virtual-time-budget=5000',
+                    '--user-data-dir=' . "$dir/profile", '--print-to-pdf=' . $pdf, 'file:///' . ltrim(str_replace('\\', '/', $page), '/'),
+                ];
+            $process = proc_open($command, [['pipe', 'r'], ['pipe', 'w'], ['pipe', 'w']], $pipes);
             if (!is_resource($process)) {
                 throw new \RuntimeException('Cannot start the browser');
             }
             fclose($pipes[0]);
-            // some builds hand the job to a background process and return at once: wait for the file
-            $deadline = microtime(true) + 30;
-            $last = -1;
-            while (microtime(true) < $deadline) {
-                clearstatcache(true, $pdf);
-                $size = is_file($pdf) ? filesize($pdf) : -1;
-                if ($size > 0 && $size === $last) {
-                    break;
+            if ($isPhaiPdf) {
+                // phai-pdf runs synchronously until the PDF is written
+                $stdout = stream_get_contents($pipes[1]);
+                $stderr = stream_get_contents($pipes[2]);
+                fclose($pipes[1]);
+                fclose($pipes[2]);
+                $code = proc_close($process);
+                if ($code !== 0) {
+                    throw new \RuntimeException('phai-pdf failed: ' . trim($stderr !== '' ? $stderr : $stdout));
                 }
-                $last = $size;
-                usleep(250000);
+            } else {
+                // some builds hand the job to a background process and return at once: wait for the file
+                $deadline = microtime(true) + 30;
+                $last = -1;
+                while (microtime(true) < $deadline) {
+                    clearstatcache(true, $pdf);
+                    $size = is_file($pdf) ? filesize($pdf) : -1;
+                    if ($size > 0 && $size === $last) {
+                        break;
+                    }
+                    $last = $size;
+                    usleep(250000);
+                }
+                stream_get_contents($pipes[1]);
+                stream_get_contents($pipes[2]);
+                fclose($pipes[1]);
+                fclose($pipes[2]);
+                proc_close($process);
             }
-            stream_get_contents($pipes[1]);
-            stream_get_contents($pipes[2]);
-            fclose($pipes[1]);
-            fclose($pipes[2]);
-            proc_close($process);
             $bytes = is_file($pdf) ? (string) file_get_contents($pdf) : '';
             if (!str_starts_with($bytes, '%PDF')) {
                 throw new \RuntimeException('The browser did not make a PDF');

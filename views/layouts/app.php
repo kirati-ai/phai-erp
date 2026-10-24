@@ -55,12 +55,10 @@ $company = \Phai\Core\App::db()->value('SELECT co_name FROM co_mstr WHERE co_id 
     <meta name="csrf-token" content="<?= e(csrf_token()) ?>">
     <meta name="phai-base" content="<?= e(url('')) ?>">
     <title><?= e(($title ?? '') !== '' ? $title . ' · ' : '') ?>PhaiERP</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="icon" type="image/svg+xml" href="<?= e(asset('img/phaierp-logo.svg')) ?>">
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/@tabler/core@1.6.1/dist/css/tabler.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.48.0/dist/tabler-icons.min.css" rel="stylesheet">
+    <link href="<?= e(asset('fonts/ibm-plex-sans-thai/ibm-plex-sans-thai.css')) ?>" rel="stylesheet">
+    <link href="<?= e(asset('vendor/tabler/tabler.min.css')) ?>" rel="stylesheet">
+    <link href="<?= e(asset('vendor/tabler-icons/tabler-icons.min.css')) ?>" rel="stylesheet">
     <link href="<?= e(asset('css/phai.css')) ?>" rel="stylesheet">
     <script>try { if (localStorage.getItem('phai-side-mini') === '1') document.documentElement.classList.add('side-mini'); } catch (e) {}</script>
 </head>
@@ -328,7 +326,7 @@ $company = \Phai\Core\App::db()->value('SELECT co_name FROM co_mstr WHERE co_id 
 <?php endif ?>
 
 <script>window.PHAI_LANG = <?= json_encode(Lang::group(Lang::locale(), 'js') ?: Lang::group('th', 'js'), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?>;</script>
-<script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.6.1/dist/js/tabler.min.js"></script>
+<script src="<?= e(asset('vendor/tabler/tabler.min.js')) ?>"></script>
 <script src="<?= e(asset('js/phai.js')) ?>"></script>
 <script src="<?= e(asset('js/xlsx.js')) ?>"></script>
 <script src="<?= e(asset('js/datepicker.js')) ?>"></script>
