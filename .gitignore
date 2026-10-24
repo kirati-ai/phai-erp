@@ -1,0 +1,23 @@
+# ค่าตั้งเครื่อง (มีรหัสผ่าน)
+/config.php
+.env
+
+# ไฟล์ที่ระบบสร้างระหว่างใช้งาน
+/storage/logs/*
+/storage/uploads/*
+/storage/tmp/
+!/storage/logs/.gitkeep
+!/storage/uploads/.gitkeep
+
+# ไลบรารีภายนอก
+/vendor/
+
+# เครื่องมือและระบบปฏิบัติการ
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# ค่าฐานข้อมูลที่ตัวติดตั้ง Windows (DesktopPhaiERP) เขียนให้หน้าติดตั้ง
+/install.defaults.php

@@ -1,0 +1,26 @@
+<?php
+// Attached files (System\AttachmentController, Phai.files): what to attach to each document — shown while there is none
+return [
+    'hint_PR' => 'Vendor quotations (several, to compare), specifications, sample pictures',
+    'hint_PO' => 'The quotation ordered from, the contract, the order signed back by the vendor',
+    'hint_RC' => 'Vendor delivery note / tax invoice, inspection sheet, pictures of damage',
+    'hint_LC' => 'Customs entry, B/L, AWB, duty receipts, freight invoices',
+    'hint_RT' => 'Pictures of the faulty goods, the vendor credit note, the return letter',
+    'hint_SO' => "The customer's purchase order, the agreed drawings / specifications",
+    'hint_SH' => 'The delivery note signed by the customer (proof of delivery)',
+    'hint_SR' => 'Pictures of the returned goods, the customer return letter',
+    'hint_AP' => 'Vendor tax invoice / invoice (evidence of input VAT)',
+    'hint_PV' => 'Transfer slip, cheque copy, vendor receipt',
+    'hint_CR' => 'Customer transfer slip, the withholding certificate (50 tawi) the customer gave us',
+    'hint_JE' => 'Supporting documents (contract, invoice, working)',
+    'hint_BR' => 'The bank statement of this reconciliation',
+    'hint_VR' => 'The PP.30 return as filed, the tax payment receipt',
+    'hint_WR' => 'The PND return as filed, the tax payment receipt',
+    'hint_VD' => 'PP.20 VAT certificate, company affidavit, bank book page (the account to pay)',
+    'hint_CM' => 'PP.20 VAT certificate, company affidavit, credit application',
+    'hint_PT' => 'Specification, drawing, picture, safety data sheet (MSDS)',
+    'hint_QC' => 'Pictures of defects, lab results, the supplier certificate of analysis (COA)',
+    'hint_PI' => 'Signed count sheets / tags',
+    'hint_FA' => 'Tax invoice, warranty, pictures, title deed, manual',
+    'hint_PC' => 'Receipt, tax invoice, cash bill, slip',
+];

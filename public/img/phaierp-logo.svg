@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- PhaiERP mark for light backgrounds (browser tab, installer, login on a phone): the same ring and leaning bamboo in
+       bamboo greens. phaierp-logo-light.svg is the white-ring one for dark backgrounds. -->
+  <defs>
+    <linearGradient id="culm" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#0e5c41"/><stop offset="1" stop-color="#1f9d72"/>
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="30.5" fill="none" stroke="#12855f" stroke-width="1.6"/>
+  <g transform="translate(32 32) scale(.78) translate(-32 -32)">
+    <g transform="translate(64 0) scale(-1 1)">
+      <rect x="28" y="6" width="8" height="54" fill="url(#culm)" transform="rotate(12 32 32)"/>
+      <g stroke="#d4f7e5" stroke-opacity=".9" stroke-width="2.2" transform="rotate(12 32 32)"><path d="M28 22h8M28 38h8"/></g>
+      <path d="M38 22C45 14 53 11 61 12C55 18 47 22 38 22Z" fill="#2fb07c"/>
+      <path d="M38 22C45 22 52 25 57 30C50 31 43 28 38 22Z" fill="#12855f"/>
+      <path d="M27 40C20 35 12 35 4 38C11 43 19 44 27 40Z" fill="#23a578"/>
+    </g>
+  </g>
+</svg>

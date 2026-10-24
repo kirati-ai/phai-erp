@@ -1,0 +1,25 @@
+<?php
+
+return [
+    'required'   => 'Required',
+    'party_tax_id_num' => 'Tax ID: 13 digits',
+    'party_tax_branch' => 'Branch: 5 digits (head office 00000)',
+    'party_zip'        => 'Postcode: 5 digits',
+    'nbr_format' => 'Letters, digits and . _ / - only',
+    'nbr_taken'  => 'This number is already used',
+    'type'       => 'Invalid value',
+    'int'        => 'Must be a whole number',
+    'number'     => 'Must be a number',
+    'min_length' => 'At least :min characters',
+    'max_length' => 'At most :max characters',
+    'min'        => 'Must be at least :min',
+    'max'        => 'Must be at most :max',
+    'email'      => 'Invalid email',
+    'date'       => 'Invalid date',
+    'format'     => 'Invalid format',
+    'code'       => 'Only A-Z 0-9 - _',
+    'in'         => 'Not an allowed value',
+    'positive'   => 'Must be more than 0',
+    'duplicate'  => 'Already in use',
+    'username'   => 'Only A-Z a-z 0-9 . - _',
+];

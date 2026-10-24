@@ -1,0 +1,35 @@
+<?php
+
+return [
+    'title' => 'ถาม AI',
+    'placeholder' => 'ถามข้อมูล เช่น ใบสั่งซื้อที่ยังไม่ได้รับของ',
+    'new_chat' => 'เริ่มใหม่',
+    'empty' => 'ถามข้อมูลในระบบได้ตามสิทธิ์ของคุณ',
+    'used' => 'ดูข้อมูลจาก',
+    'disabled' => 'ยังไม่ได้เปิดใช้ AI',
+    'no_answer' => 'ยังหาคำตอบไม่ได้ ลองถามให้แคบลง',
+    'unreachable' => 'ติดต่อบริการ AI ไม่ได้',
+    'service_error' => 'บริการ AI ตอบกลับผิดพลาด (:status) :message',
+
+    'settings_title' => 'ตั้งค่า AI',
+    'enabled' => 'เปิดใช้ AI',
+    'provider' => 'ผู้ให้บริการ',
+    'provider_claude' => 'Claude (Anthropic)',
+    'provider_gemini' => 'Gemini (Google)',
+    'model' => 'รุ่นโมเดล',
+    'api_key' => 'API key',
+    'key_saved' => 'บันทึกไว้แล้ว (:hint) เว้นว่างเพื่อใช้ค่าเดิม',
+    'key_needed' => 'ต้องใส่ API key ก่อนเปิดใช้',
+    'price_in' => 'ราคาขาเข้า ($ / 1M โทเค็น)',
+    'price_out' => 'ราคาขาออก ($ / 1M โทเค็น)',
+
+    'usage' => 'การใช้งาน',
+    'user' => 'ผู้ใช้',
+    'month_questions' => 'คำถามเดือนนี้',
+    'month_cost' => 'ค่าใช้จ่ายเดือนนี้',
+    'questions' => 'คำถามทั้งหมด',
+    'tokens' => 'โทเค็น',
+    'cost' => 'ค่าใช้จ่ายทั้งหมด',
+    'last_at' => 'ใช้ล่าสุด',
+    'no_usage' => 'ยังไม่มีการใช้งาน',
+];

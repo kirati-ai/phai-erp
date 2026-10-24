@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 420" fill="none">
+  <!-- A bamboo sprig for backgrounds: a thin culm with jointed nodes, long narrow pointed leaves hanging in clusters.
+       White, see-through; the page tints it by what is under it. -->
+  <defs>
+    <g id="leaf">
+      <path d="M0 0C16-7 78-12 150 0C78 12 16 7 0 0Z" fill="#fff" fill-opacity=".16"/>
+      <path d="M6 0H140" stroke="#fff" stroke-opacity=".28" stroke-width="1.2" stroke-linecap="round"/>
+    </g>
+  </defs>
+  <!-- the culm, with its nodes -->
+  <path d="M70 0C96 110 140 230 214 420" stroke="#fff" stroke-opacity=".18" stroke-width="7" stroke-linecap="round"/>
+  <g stroke="#fff" stroke-opacity=".3" stroke-width="2" stroke-linecap="round">
+    <path d="M78 52l14-4"/><path d="M106 150l16-5"/><path d="M146 262l16-6"/><path d="M188 362l16-6"/>
+  </g>
+  <!-- twigs -->
+  <g stroke="#fff" stroke-opacity=".2" stroke-width="2" stroke-linecap="round">
+    <path d="M86 50C120 40 150 44 176 60"/><path d="M114 148C88 150 66 162 48 182"/><path d="M154 260C190 252 222 258 250 276"/>
+  </g>
+  <!-- leaf clusters hanging from the twigs -->
+  <use href="#leaf" transform="translate(176 60) rotate(28)"/>
+  <use href="#leaf" transform="translate(170 58) rotate(52) scale(.85)"/>
+  <use href="#leaf" transform="translate(160 54) rotate(76) scale(.75)"/>
+  <use href="#leaf" transform="translate(150 50) rotate(8) scale(.8)"/>
+  <use href="#leaf" transform="translate(48 182) rotate(118) scale(.9)"/>
+  <use href="#leaf" transform="translate(54 176) rotate(96) scale(.8)"/>
+  <use href="#leaf" transform="translate(60 170) rotate(142) scale(.7)"/>
+  <use href="#leaf" transform="translate(250 276) rotate(34)"/>
+  <use href="#leaf" transform="translate(244 272) rotate(62) scale(.85)"/>
+  <use href="#leaf" transform="translate(236 268) rotate(14) scale(.8)"/>
+  <use href="#leaf" transform="translate(228 264) rotate(86) scale(.7)"/>
+</svg>

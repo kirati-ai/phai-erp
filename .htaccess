@@ -1,0 +1,8 @@
+# When the web root is this folder (not public/), send every request into public/
+# so config.php, src/, database/ and storage/ are never served.
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
