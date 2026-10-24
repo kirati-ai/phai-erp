@@ -1,0 +1,27 @@
+<?php
+// Customer deposits (DepositController)
+return [
+    'title' => 'Customer deposits',
+    'new' => 'Receive a deposit',
+    'take' => 'Receive deposit',
+    'print_title' => 'Deposit receipt / tax invoice',
+    'amount' => 'Received (incl. VAT)',
+    'so_total' => 'Order total',
+    'taken' => 'Deposits so far',
+    'left' => 'Left to deduct (before VAT)',
+    'deducted' => 'Deducted (before VAT)',
+    'uses' => 'Tax invoices that deducted it',
+    'no_uses' => 'Not deducted yet',
+    'deduct' => 'Less deposit',
+    'after' => 'Value after deposit',
+    'line' => 'Deposit on sales order :so',
+    'note' => 'This deposit is deducted from the tax invoice when the goods ship (its VAT is paid on this one)',
+    'desc' => 'Deposit :nbr (order :so)',
+    'so_not_open' => 'Deposits are taken on open orders in baht only',
+    'over' => 'At most :max more',
+    'used' => 'Cannot cancel: a tax invoice already deducted it (cancel that first)',
+    'no_xml' => 'No e-Tax XML yet for a tax invoice that deducts a deposit; use the PDF',
+    'status_O' => 'Not fully deducted',
+    'status_C' => 'Deducted',
+    'status_X' => 'Cancelled',
+];

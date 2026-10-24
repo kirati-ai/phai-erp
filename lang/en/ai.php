@@ -1,0 +1,35 @@
+<?php
+
+return [
+    'title' => 'Ask AI',
+    'placeholder' => 'Ask about your data, e.g. purchase orders not yet received',
+    'new_chat' => 'New chat',
+    'empty' => 'Ask about the data you have access to',
+    'used' => 'Data from',
+    'disabled' => 'AI is not enabled yet',
+    'no_answer' => 'No answer found. Try a narrower question.',
+    'unreachable' => 'Cannot reach the AI service',
+    'service_error' => 'The AI service returned an error (:status) :message',
+
+    'settings_title' => 'AI settings',
+    'enabled' => 'Enable AI',
+    'provider' => 'Provider',
+    'provider_claude' => 'Claude (Anthropic)',
+    'provider_gemini' => 'Gemini (Google)',
+    'model' => 'Model',
+    'api_key' => 'API key',
+    'key_saved' => 'Saved (:hint). Leave blank to keep it',
+    'key_needed' => 'Enter an API key before enabling',
+    'price_in' => 'Input price (USD / million tokens)',
+    'price_out' => 'Output price (USD / million tokens)',
+
+    'usage' => 'Usage',
+    'user' => 'User',
+    'month_questions' => 'Questions this month',
+    'month_cost' => 'Cost this month',
+    'questions' => 'All questions',
+    'tokens' => 'Tokens',
+    'cost' => 'Total cost',
+    'last_at' => 'Last used',
+    'no_usage' => 'No usage yet',
+];

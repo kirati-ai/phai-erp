@@ -1,0 +1,30 @@
+<?php
+
+// short headings of printed documents (DocumentPrintController); a column not here takes its screen label
+return [
+    'pr_req_by' => 'ผู้ขอ',
+    'pr_dept' => 'แผนก',
+    'prd_qty_req' => 'จำนวน',
+    'prd_req_date' => 'ต้องการใช้',
+    'prd_pref_vd' => 'ผู้ขายที่แนะนำ',
+    'prd_est_cost' => 'ราคาประมาณ',
+    'rc_po_nbr' => 'ใบสั่งซื้อ',
+    'rc_curr' => 'สกุลเงิน · อัตรา',
+    'rc_tot_amt' => 'มูลค่าใบรับ',
+    'wo_part' => 'สินค้าที่ผลิต',
+    'wo_qty_ord' => 'จำนวนสั่งผลิต',
+    'wo_site' => 'คลัง',
+    'wo_rel_date' => 'วันที่เริ่ม',
+    'wo_due_date' => 'กำหนดเสร็จ',
+    'wod_qty_req' => 'ต้องใช้',
+    'wod_qty_iss' => 'เบิกแล้ว',
+    'wod_loc' => 'ตำแหน่งเบิก',
+    'pit_tag' => 'ป้าย',
+    'pit_loc' => 'ตำแหน่ง',
+    'pit_lot' => 'ล็อต',
+    'pit_sys_qty' => 'ยอดในระบบ',
+    'pit_count_qty' => 'นับได้',
+    'pit_variance' => 'ผลต่าง',
+    'gl_ref' => 'เลขที่',
+    'gl_type' => 'ประเภท',
+];

@@ -1,0 +1,61 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+// PhaiERP command line:  php bin/phai <command>
+
+use Phai\Core\App;
+use Phai\Install\Demo;
+
+if (PHP_SAPI !== 'cli') {
+    exit(1);
+}
+require dirname(__DIR__) . '/src/bootstrap.php';
+restore_error_handler();
+restore_exception_handler();
+
+$command = $argv[1] ?? 'help';
+
+try {
+    switch ($command) {
+        case 'version':
+            echo 'PhaiERP ', App::VERSION, "\n";
+            break;
+
+        case 'demo':
+            if (!App::installed()) {
+                throw new RuntimeException('Not installed yet: open the web installer first.');
+            }
+            Demo::load();
+            echo "Sample data loaded.\n";
+            break;
+
+        case 'password':
+            // forgotten password: set a new one from the server's own command line
+            $userid = $argv[2] ?? '';
+            $db = App::db();
+            if ($userid === '' || !$db->value('SELECT 1 FROM us_mstr WHERE us_userid = ?', [$userid])) {
+                throw new RuntimeException('Usage: php bin/phai password <user>  (users: '
+                    . implode(', ', array_column($db->all('SELECT us_userid FROM us_mstr ORDER BY us_userid'), 'us_userid')) . ')');
+            }
+            echo "New password for $userid (at least 8 characters): ";
+            $password = rtrim((string) fgets(STDIN), "\r\n");
+            if (mb_strlen($password) < 8) {
+                throw new RuntimeException('Password too short: nothing changed.');
+            }
+            $db->update('us_mstr', ['us_password_hash' => \Phai\Core\Auth\Auth::hash($password), 'updated_by' => 'cli'], ['us_userid' => $userid]);
+            $db->run('DELETE FROM lg_hist WHERE lg_userid = ? AND lg_ok = 0', [$userid]);
+            echo "Password changed. You can sign in as $userid now.\n";
+            break;
+
+        default:
+            echo "PhaiERP ", App::VERSION, "\n\n",
+                "  php bin/phai version              show the version\n",
+                "  php bin/phai password <user>      set a new password for a user (forgotten password)\n",
+                "  php bin/phai demo                 load sample data into an empty system (it stays: install again to start without it)\n";
+    }
+} catch (Throwable $e) {
+    fwrite(STDERR, $e->getMessage() . "\n");
+    exit(1);
+}

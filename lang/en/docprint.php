@@ -1,0 +1,30 @@
+<?php
+
+// short headings of printed documents (DocumentPrintController); a column not here takes its screen label
+return [
+    'pr_req_by' => 'Requested by',
+    'pr_dept' => 'Department',
+    'prd_qty_req' => 'Qty',
+    'prd_req_date' => 'Needed by',
+    'prd_pref_vd' => 'Suggested vendor',
+    'prd_est_cost' => 'Est. price',
+    'rc_po_nbr' => 'Purchase order',
+    'rc_curr' => 'Currency · rate',
+    'rc_tot_amt' => 'Receipt value',
+    'wo_part' => 'Item made',
+    'wo_qty_ord' => 'Qty ordered',
+    'wo_site' => 'Site',
+    'wo_rel_date' => 'Start',
+    'wo_due_date' => 'Due',
+    'wod_qty_req' => 'Required',
+    'wod_qty_iss' => 'Issued',
+    'wod_loc' => 'Issue from',
+    'pit_tag' => 'Tag',
+    'pit_loc' => 'Location',
+    'pit_lot' => 'Lot',
+    'pit_sys_qty' => 'System qty',
+    'pit_count_qty' => 'Counted',
+    'pit_variance' => 'Difference',
+    'gl_ref' => 'Number',
+    'gl_type' => 'Type',
+];
