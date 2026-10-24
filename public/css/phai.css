@@ -898,7 +898,7 @@ th.phai-act { min-width: 2.5rem; }
 /* the row icons in Tabler's thin-stroke font (same glyphs as the layout's tabler-icons, stroke 1.5 instead of 2) */
 @font-face {
     font-family: "tabler-icons-200"; font-style: normal; font-weight: 400; font-display: block;
-    src: url("https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.48.0/dist/fonts/tabler-icons-200.woff2?v3.48.0") format("woff2");
+    src: url("../vendor/tabler-icons/fonts/tabler-icons-200.woff2") format("woff2");
 }
 .phai-act-btn .ti { font-family: "tabler-icons-200" !important; font-size: .875rem; font-weight: 400; color: var(--tblr-secondary); }
 .phai-act-btn:hover:not(:disabled) .ti { color: inherit; }

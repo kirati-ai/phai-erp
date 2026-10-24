@@ -16,9 +16,9 @@ use Phai\Core\Lang;
     <meta name="phai-base" content="<?= e(url('')) ?>">
     <title><?= e($docTitle ?? (($title ?? '') !== '' ? $title . ' · PhaiERP' : 'PhaiERP')) ?></title>
     <link rel="icon" type="image/svg+xml" href="<?= e(asset('img/phaierp-logo.svg')) ?>">
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/@tabler/core@1.6.1/dist/css/tabler.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.48.0/dist/tabler-icons.min.css" rel="stylesheet">
+    <link href="<?= e(asset('fonts/ibm-plex-sans-thai/ibm-plex-sans-thai.css')) ?>" rel="stylesheet">
+    <link href="<?= e(asset('vendor/tabler/tabler.min.css')) ?>" rel="stylesheet">
+    <link href="<?= e(asset('vendor/tabler-icons/tabler-icons.min.css')) ?>" rel="stylesheet">
     <link href="<?= e(asset('css/phai.css')) ?>" rel="stylesheet">
     <?php if (!empty($themed)): // the login page: the theme kept in this browser, before it paints; prints and the installer stay light ?>
         <script>try { const t = localStorage.getItem('phai-theme'); if (t === 'dark') document.documentElement.dataset.bsTheme = 'dark'; else if (t && t !== 'light') document.documentElement.dataset.phaiTheme = t; } catch (_) {}</script>
@@ -31,7 +31,7 @@ use Phai\Core\Lang;
 
 <?php if (!empty($scripts)): ?>
 <script>window.PHAI_LANG = <?= json_encode(Lang::group(Lang::locale(), 'js') ?: Lang::group('th', 'js'), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?>;</script>
-<script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.6.1/dist/js/tabler.min.js"></script>
+<script src="<?= e(asset('vendor/tabler/tabler.min.js')) ?>"></script>
 <script src="<?= e(asset('js/phai.js')) ?>"></script>
 <script src="<?= e(asset('js/datepicker.js')) ?>"></script>
 <?php foreach ($scripts as $script): ?>
