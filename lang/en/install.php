@@ -12,6 +12,7 @@ return [
     'db_name'        => 'Database name',
     'db_user'        => 'User',
     'db_pass'        => 'Password',
+    'db_pass_preset' => 'Already set, leave empty',
     'db_test'        => 'Test',
     'db_ok'          => 'Connected',
     'db_new'         => 'a new database will be created',
