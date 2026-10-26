@@ -32,7 +32,8 @@ final class Installer
 
     /**
      * Database fields the install page starts with. install.defaults.php (written by the Windows
-     * setup, DesktopPhaiERP, with the port it gave MySQL) overrides them; it never holds a password.
+     * setup, DesktopPhaiERP, with the port it gave MySQL) overrides them. A password it may hold
+     * (Phai Server writes one) is read by presetPassword() only, so it never reaches the page.
      *
      * @return array{db_host: string, db_port: int, db_name: string, db_user: string}
      */
@@ -49,6 +50,28 @@ final class Installer
             }
         }
         return $defaults;
+    }
+
+    /**
+     * The database password a server appliance (Phai Server) prepared, so the person installing
+     * never has to know it. It stays on the server: the page only learns that one exists.
+     */
+    public static function presetPassword(?string $file = null): string
+    {
+        $file ??= PHAI_ROOT . '/install.defaults.php';
+        $given = is_file($file) ? require $file : null;
+        return is_array($given) && is_string($given['db_pass'] ?? null) ? $given['db_pass'] : '';
+    }
+
+    /** An empty password means "the prepared one", but only for the prepared server, database and user. */
+    public static function usePresetPassword(InstallInput $in, ?string $file = null): void
+    {
+        $preset = self::presetPassword($file);
+        $d = self::defaults($file);
+        if ($in->db_pass === '' && $preset !== '' && $in->db_host === $d['db_host']
+            && $in->db_port === $d['db_port'] && $in->db_name === $d['db_name'] && $in->db_user === $d['db_user']) {
+            $in->db_pass = $preset;
+        }
     }
 
     public static function requirementsMet(): bool

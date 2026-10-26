@@ -24,6 +24,7 @@ final class InstallController
             'requirements' => Installer::requirements(),
             'ready'        => Installer::requirementsMet(),
             'defaults'     => Installer::defaults(),
+            'preset'       => Installer::presetPassword() !== '',
             'scripts'      => ['js/pages/install.js'],
         ], 'blank');
     }
@@ -32,6 +33,7 @@ final class InstallController
     #[Post('/api/install/db')]
     public function checkDb(InstallInput $input): array
     {
+        Installer::usePresetPassword($input);
         $pdo = Installer::connect($input);
         $tables = Installer::tableCount($pdo, $input->db_name);
         if ($tables > 0) {
@@ -90,6 +92,7 @@ final class InstallController
         $host = preg_replace('/[^A-Za-z0-9.:\[\]-]/', '', $request->header('host') ?? 'localhost');
         $appUrl = ($https ? 'https' : 'http') . '://' . $host . $request->basePath;
 
+        Installer::usePresetPassword($input);
         return Installer::install($input, $appUrl) + ['login' => url('/login')];
     }
 }

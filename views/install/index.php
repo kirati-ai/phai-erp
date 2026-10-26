@@ -63,7 +63,7 @@ $icons = ['ti-device-desktop-check', 'ti-database', 'ti-building', 'ti-user-shie
                         </div>
                         <div class="col-sm-4">
                             <label class="form-label" for="db_pass"><?= e(t('install.db_pass')) ?></label>
-                            <input type="password" class="form-control form-control-sm" id="db_pass" name="db_pass" autocomplete="new-password">
+                            <input type="password" class="form-control form-control-sm" id="db_pass" name="db_pass" autocomplete="new-password"<?= !empty($preset) ? ' placeholder="' . e(t('install.db_pass_preset')) . '"' : '' ?>>
                         </div>
                     </div>
                     <div class="small mt-2" id="db-status"></div>

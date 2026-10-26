@@ -49,4 +49,4 @@ docs/        คู่มือ
 
 ## สัญญาอนุญาต
 
-ยังไม่กำหนด
+MIT ดูไฟล์ [LICENSE](LICENSE) — Copyright (c) 2026 Monrak Net Co., Ltd.
