@@ -42,3 +42,12 @@ test('a typed password wins over the preset, and no file means no preset', funct
     check($in->db_pass === 'typed');
     check(Installer::presetPassword(sys_get_temp_dir() . '/no-such-defaults.php') === '');
 });
+
+test('a ready-made password hash stands in for the password, and the body cannot set it', function () {
+    $in = new InstallInput(co_name: 'ร้านไผ่', us_userid: 'admin', us_name: 'A', us_email: 'a@example.com');
+    check(isset($in->missingForInstall()['password']), 'password should be missing');
+    $in->password_hash = password_hash('s3cret-pass', PASSWORD_DEFAULT);
+    check($in->missingForInstall() === [], 'a hash should count as the password');
+    $ctor = (new ReflectionClass(InstallInput::class))->getConstructor();
+    check(!in_array('password_hash', array_map(fn ($p) => $p->getName(), $ctor->getParameters()), true), 'password_hash must not be a constructor argument');
+});

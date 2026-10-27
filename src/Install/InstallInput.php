@@ -53,6 +53,13 @@ final class InstallInput
     ) {
     }
 
+    /**
+     * A ready-made bcrypt hash for the first user, for installs that must not carry the plain
+     * password around (Phai Server: bin/phai install). Not a constructor argument on purpose, so
+     * the web installer's request body can never set it.
+     */
+    public ?string $password_hash = null;
+
     /** Required fields of each wizard step. */
     public const STEPS = [
         'company' => ['co_name'],
@@ -65,7 +72,7 @@ final class InstallInput
         $missing = [];
         $fields = $step === null ? array_merge(...array_values(self::STEPS)) : (self::STEPS[$step] ?? []);
         foreach ($fields as $field) {
-            if ($this->$field === null) {
+            if ($this->$field === null && !($field === 'password' && $this->password_hash !== null)) {
                 $missing[$field] = t('validation.required');
             }
         }
