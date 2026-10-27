@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 use Phai\Core\App;
 use Phai\Install\Demo;
+use Phai\Install\InstallInput;
+use Phai\Install\Installer;
 
 if (PHP_SAPI !== 'cli') {
     exit(1);
@@ -31,6 +33,34 @@ try {
             echo "Sample data loaded.\n";
             break;
 
+        case 'install':
+            // install without the web wizard (Phai Server's first boot): php bin/phai install <setup.json> [app url]
+            // The database is the one install.defaults.php names; the first user comes as a bcrypt hash.
+            if (App::installed()) {
+                throw new RuntimeException('Already installed.');
+            }
+            $setup = json_decode((string) @file_get_contents($argv[2] ?? ''), true);
+            $company = is_array($setup['erp']['company'] ?? null) ? $setup['erp']['company'] : [];
+            $admin = is_array($setup['erp']['admin'] ?? null) ? $setup['erp']['admin'] : [];
+            if (!is_array($setup) || ($company['name'] ?? '') === '' || ($admin['userid'] ?? '') === ''
+                || ($admin['name'] ?? '') === '' || ($admin['email'] ?? '') === '' || ($admin['password_hash'] ?? '') === '') {
+                throw new RuntimeException('Usage: php bin/phai install <setup.json> [app url]  (erp.company.name, erp.admin.userid, name, email, password_hash)');
+            }
+            $d = Installer::defaults();
+            $in = new InstallInput(
+                db_host: $d['db_host'], db_port: $d['db_port'], db_name: $d['db_name'], db_user: $d['db_user'],
+                db_pass: Installer::presetPassword(),
+                co_name: (string) $company['name'],
+                co_tax_id: ($company['tax_id'] ?? '') !== '' ? (string) $company['tax_id'] : null,
+                co_phone: ($company['phone'] ?? '') !== '' ? (string) $company['phone'] : null,
+                us_userid: (string) $admin['userid'], us_name: (string) $admin['name'],
+                us_email: (string) $admin['email'],
+            );
+            $in->password_hash = (string) $admin['password_hash'];
+            Installer::install($in, $argv[3] ?? 'http://' . gethostname());
+            echo "PhaiERP installed. Sign in as {$in->us_userid}.\n";
+            break;
+
         case 'password':
             // forgotten password: set a new one from the server's own command line
             $userid = $argv[2] ?? '';
@@ -52,6 +82,7 @@ try {
         default:
             echo "PhaiERP ", App::VERSION, "\n\n",
                 "  php bin/phai version              show the version\n",
+                "  php bin/phai install <setup.json> install without the web wizard (see Phai Server)\n",
                 "  php bin/phai password <user>      set a new password for a user (forgotten password)\n",
                 "  php bin/phai demo                 load sample data into an empty system (it stays: install again to start without it)\n";
     }

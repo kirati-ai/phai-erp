@@ -155,7 +155,7 @@ final class Installer
                  VALUES (?, ?, ?, ?, ?, 1, ?, ?)'
             )->execute([
                 $in->us_userid, $in->us_name, strtolower((string) $in->us_email),
-                password_hash((string) $in->password, PASSWORD_DEFAULT), 'ADMIN', 'install', 'install',
+                $in->password_hash ?? password_hash((string) $in->password, PASSWORD_DEFAULT), 'ADMIN', 'install', 'install',
             ]);
         } catch (\Throwable $e) {
             // Leave the database (and uploads) as we found them, so the user can fix the problem and try again.
