@@ -44,7 +44,7 @@ try {
             $admin = is_array($setup['erp']['admin'] ?? null) ? $setup['erp']['admin'] : [];
             if (!is_array($setup) || ($company['name'] ?? '') === '' || ($admin['userid'] ?? '') === ''
                 || ($admin['name'] ?? '') === '' || ($admin['email'] ?? '') === '' || ($admin['password_hash'] ?? '') === '') {
-                throw new RuntimeException('Usage: php bin/phai install <setup.json> [app url]  (erp.company.name, erp.admin.userid, name, email, password_hash)');
+                throw new RuntimeException('Usage: php bin/phai install <setup.json> [app url]  (erp.company.name, erp.admin.userid, name, email, password_hash; erp.demo loads the sample data)');
             }
             $d = Installer::defaults();
             $in = new InstallInput(
@@ -55,10 +55,15 @@ try {
                 co_phone: ($company['phone'] ?? '') !== '' ? (string) $company['phone'] : null,
                 us_userid: (string) $admin['userid'], us_name: (string) $admin['name'],
                 us_email: (string) $admin['email'],
+                demo: ($setup['erp']['demo'] ?? false) === true,
             );
             $in->password_hash = (string) $admin['password_hash'];
-            Installer::install($in, $argv[3] ?? 'http://' . gethostname());
+            $result = Installer::install($in, $argv[3] ?? 'http://' . gethostname());
             echo "PhaiERP installed. Sign in as {$in->us_userid}.\n";
+            // the installation stands even when the sample data could not be loaded
+            if (isset($result['demo_error'])) {
+                fwrite(STDERR, $result['demo_error'] . "\n");
+            }
             break;
 
         case 'password':
