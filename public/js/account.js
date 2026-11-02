@@ -88,7 +88,7 @@
         });
     });
 
-    // ธีม (AuthController::THEMES): a dot per theme in the user menu; a click shows it at once (the menu stays open to try
+    // ธีม (AuthController::THEMES): a dot per theme in its menu on the top bar; a click shows it at once (the menu stays open to try
     // another) and keeps it with the user (us_theme) — ไผ่ยามค่ำ is dark (data-bs-theme), the colours are data-phai-theme
     const themePick = document.getElementById('phai-theme');
     themePick?.addEventListener('click', async (e) => {

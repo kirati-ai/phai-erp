@@ -165,16 +165,29 @@ $company = \Phai\Core\App::db()->value('SELECT co_name FROM co_mstr WHERE co_id 
                 <span class="badge bg-secondary-lt text-secondary fw-normal phai-doc-nbr" title="<?= e(t('common.next_nbr')) ?>"><?= e($docNbr) ?></span>
             <?php endif ?>
         </div>
-        <div class="d-flex align-items-center gap-3">
+        <div class="d-flex align-items-center gap-1">
             <?php if ($helpFile): ?>
-                <button type="button" class="phai-help-btn" data-bs-toggle="offcanvas" data-bs-target="#phai-help"><i class="ti ti-help-circle me-1"></i><?= e(t('common.help')) ?></button>
+                <button type="button" class="phai-help-btn" data-bs-toggle="offcanvas" data-bs-target="#phai-help" title="<?= e(t('common.help')) ?>" aria-label="<?= e(t('common.help')) ?>"><i class="ti ti-help-circle"></i></button>
             <?php endif ?>
             <?php $signWaiting = \Phai\Modules\System\Signature::waitingCount(); // documents asking for my signature ?>
             <?php if ($signWaiting): ?>
-                <a href="<?= e(url('/signatures')) ?>" class="phai-help-btn" title="<?= e(t('sign.page')) ?>"><i class="ti ti-writing-sign me-1"></i><?= e(t('sign.waiting')) ?> <span class="badge bg-red text-white ms-1"><?= $signWaiting ?></span></a>
+                <a href="<?= e(url('/signatures')) ?>" class="phai-help-btn" title="<?= e(t('sign.waiting')) ?>" aria-label="<?= e(t('sign.waiting')) ?>"><i class="ti ti-writing-sign"></i><span class="badge bg-red text-white ms-1"><?= $signWaiting ?></span></a>
             <?php endif ?>
+            <div class="dropdown"><?php // ธีม on the bar itself: a dot per theme, a click switches at once and keeps it with the user ?>
+                <button type="button" class="phai-help-btn" data-bs-toggle="dropdown" data-bs-auto-close="outside"  title="<?= e(t('auth.theme')) ?>" aria-label="<?= e(t('auth.theme')) ?>"><i class="ti ti-palette"></i></button>
+                <div class="dropdown-menu dropdown-menu-end p-0">
+                    <div class="phai-theme-pick phai-theme-pick-bar" id="phai-theme">
+                        <div class="phai-theme-pick-head"><i class="ti ti-palette me-2"></i><?= e(t('auth.theme')) ?><span class="ms-auto ps-3" data-theme-name><?= e(t('auth.theme_' . $theme)) ?></span></div>
+                        <div class="phai-theme-dots">
+                            <?php foreach (\Phai\Modules\System\AuthController::THEMES as $key): ?>
+                                <button type="button" class="phai-theme-dot<?= $key === $theme ? ' active' : '' ?>" data-theme="<?= e($key) ?>" title="<?= e(t('auth.theme_' . $key)) ?>" aria-label="<?= e(t('auth.theme_' . $key)) ?>" aria-pressed="<?= $key === $theme ? 'true' : 'false' ?>"><i class="ti ti-check"></i></button>
+                            <?php endforeach ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <?php $other = Lang::locale() === 'th' ? 'en' : 'th'; // the flag of the language a click switches to ?>
-            <button type="button" class="phai-lang-btn" id="phai-lang" data-lang="<?= $other ?>" title="<?= e(t('common.lang_' . $other)) ?>" aria-label="<?= e(t('common.lang_' . $other)) ?>"><?= \Phai\Core\View\View::partial('partials/flag', ['lang' => $other]) ?><span><?= strtoupper($other) ?></span></button>
+            <button type="button" class="phai-lang-btn" id="phai-lang" data-lang="<?= $other ?>" title="<?= e(t('common.lang_' . $other)) ?>" aria-label="<?= e(t('common.lang_' . $other)) ?>"><?= \Phai\Core\View\View::partial('partials/flag', ['lang' => $other]) ?></button>
             <?php
             // the user: picture (or initials) and name; the menu opens on a card with the same picture
             $avatarUrl = \Phai\Modules\System\Avatar::url($user ?? []);
@@ -183,7 +196,7 @@ $company = \Phai\Core\App::db()->value('SELECT co_name FROM co_mstr WHERE co_id 
                 ? '<img src="' . e($avatarUrl) . '" alt="" class="phai-avatar ' . $cls . '" data-avatar>'
                 : '<span class="phai-avatar ' . $cls . '" data-avatar data-initials>' . e($initials) . '</span>';
             ?>
-            <div class="dropdown">
+            <div class="dropdown ms-2">
                 <a href="#" class="btn btn-sm btn-ghost-secondary phai-user-btn" data-bs-toggle="dropdown">
                     <?= $avatar('phai-avatar-sm') ?><span data-user-name><?= e($user['us_name'] ?? '') ?></span>
                 </a>
@@ -209,14 +222,6 @@ $company = \Phai\Core\App::db()->value('SELECT co_name FROM co_mstr WHERE co_id 
                     <a href="#" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#phai-password">
                         <i class="ti ti-key me-2"></i><?= e(t('auth.change_password')) ?>
                     </a>
-                    <div class="phai-theme-pick" id="phai-theme"><?php // a dot per theme: a click switches at once and keeps it with the user ?>
-                        <div class="phai-theme-pick-head"><i class="ti ti-palette me-2"></i><?= e(t('auth.theme')) ?><span class="ms-auto" data-theme-name><?= e(t('auth.theme_' . $theme)) ?></span></div>
-                        <div class="phai-theme-dots">
-                            <?php foreach (\Phai\Modules\System\AuthController::THEMES as $key): ?>
-                                <button type="button" class="phai-theme-dot<?= $key === $theme ? ' active' : '' ?>" data-theme="<?= e($key) ?>" title="<?= e(t('auth.theme_' . $key)) ?>" aria-label="<?= e(t('auth.theme_' . $key)) ?>" aria-pressed="<?= $key === $theme ? 'true' : 'false' ?>"><i class="ti ti-check"></i></button>
-                            <?php endforeach ?>
-                        </div>
-                    </div>
                     <a href="#" class="dropdown-item" id="phai-logout">
                         <i class="ti ti-logout me-2"></i><?= e(t('auth.logout')) ?>
                     </a>
