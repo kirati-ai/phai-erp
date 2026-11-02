@@ -23,6 +23,26 @@ $edit = $can['edit'];
         </div>
     </div>
 
+    <div class="col-md-5 order-md-3">
+        <div class="card h-100" id="company-stamp">
+            <div class="card-header py-2"><h3 class="card-title"><?= e(t('sign.stamp')) ?></h3></div>
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="phai-logo-box">
+                    <img id="co-stamp-img" src="" alt="" hidden>
+                    <i class="ti ti-rubber-stamp text-secondary fs-2" id="co-stamp-none"></i>
+                </div>
+                <div class="d-flex flex-column gap-1 align-items-start">
+                    <?php if ($edit): ?>
+                        <input type="file" id="co-stamp-file" accept="image/png,image/jpeg,image/webp" hidden>
+                        <button type="button" class="btn btn-sm" id="co-stamp-change"><i class="ti ti-upload me-1"></i><?= e(t('sign.stamp_change')) ?></button>
+                        <button type="button" class="btn btn-sm btn-ghost-danger" id="co-stamp-remove" hidden><i class="ti ti-trash me-1"></i><?= e(t('sign.stamp_remove')) ?></button>
+                    <?php endif ?>
+                    <span class="small text-secondary"><?= e(t('sign.stamp_hint')) ?></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="col-md-7">
         <form class="card h-100" id="company-address" novalidate autocomplete="off">
             <div class="card-header py-2">

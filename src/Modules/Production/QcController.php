@@ -45,7 +45,7 @@ final class QcController
                 $n($q['qc_qty_inspect']), $n($q['qc_qty_pass']), $n($q['qc_qty_fail']), (string) ($q['pt_um'] ?? '')]]],
             'totals' => [],
             'notes'  => (string) ($q['qc_remarks'] ?? ''),
-            'signs'  => [t('production.qc_sign_inspector'), t('production.qc_sign_approve')],
+            'signs'  => [t('production.qc_sign_inspector'), SalesPrint::approve(t('production.qc_sign_approve'))],
         ]);
     }
 }

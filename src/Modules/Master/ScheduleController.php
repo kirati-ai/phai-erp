@@ -236,7 +236,7 @@ final class ScheduleController
             ], 'rows' => $rows],
             'totals' => [],
             'notes'  => trim(t('schedule.print_note_' . $t, ['date' => SalesPrint::date($rel['firm_date'])]) . "\n" . ($rel['rmks'] ?? '')),
-            'signs'  => $t === 'PO' ? [t('purchase.buyer'), t('purchase.approve')] : [t('schedule.sign_SO')],
+            'signs'  => $t === 'PO' ? [t('purchase.buyer'), SalesPrint::approve(t('purchase.approve'))] : [t('schedule.sign_SO')],
         ]);
     }
 

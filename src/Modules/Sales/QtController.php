@@ -78,7 +78,7 @@ final class QtController
             'lines'  => SalesPrint::priceLines($lines, 'qtd', 'qtd_qty'),
             'totals' => SalesPrint::totals($h['qt_net_amt'], $h['qt_tax_pct'], $h['qt_tax_amt'], $h['qt_tot_amt'], $h['qt_curr']),
             'notes'  => $h['qt_remarks'],
-            'signs'  => [t('sales.sign_customer'), t('sales.sign_authorized')],
+            'signs'  => [SalesPrint::outside(t('sales.sign_customer')), SalesPrint::approve(t('sales.sign_authorized'))],
         ]);
     }
 

@@ -114,7 +114,7 @@ final class ShipmentController
                 ],
                 'rows' => array_map(fn ($l) => [$l['shd_line'], $l['shd_part'] . ' ' . ($l['pt_desc1'] ?? ''), $l['shd_lot'], $q($l['shd_qty_shp']), $l['shd_um']], self::lines($nbr)),
             ],
-            'signs' => [t('sales.sign_receiver'), t('sales.sign_sender')],
+            'signs' => [SalesPrint::outside(t('sales.sign_receiver')), t('sales.sign_sender')],
         ]);
     }
 

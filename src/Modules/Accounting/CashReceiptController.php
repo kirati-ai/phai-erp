@@ -136,7 +136,7 @@ final class CashReceiptController
                 'words' => BahtText::of((float) $h['cr_amt']),
             ],
             'notes' => $h['cr_remarks'],
-            'signs' => [t('accounting.sign_payer'), t('accounting.sign_collector')],
+            'signs' => [SalesPrint::outside(t('accounting.sign_payer')), t('accounting.sign_collector')],
         ]);
     }
 

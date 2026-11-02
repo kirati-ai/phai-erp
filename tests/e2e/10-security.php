@@ -15,7 +15,10 @@ $open = ['/api/geo/provinces', '/api/geo/districts/{pv_id}', '/api/geo/subdistri
     // module overviews (menu *): each panel shows only what the user may see, like the home page
     '/purchase', '/inventory', '/production', '/sales', '/accounting',
     // teaching material, like the help pages
-    '/learn'];
+    '/learn',
+    // my own signature and my signing list; what may be signed is checked on the document's print right (13-signatures)
+    '/signatures', '/signatures/{id}', '/api/signatures', '/api/signatures/people', '/api/signatures/sign', '/api/signatures/request',
+    '/api/signatures/reject', '/api/signatures/withdraw', '/api/me/sign'];
 
 $a = login('admin', $pw);
 $a->req('POST', '/api/roles', ['role_code' => 'NOPERM', 'role_desc' => 'No rights']);

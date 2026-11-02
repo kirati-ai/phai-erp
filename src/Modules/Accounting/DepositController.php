@@ -236,7 +236,7 @@ final class DepositController
                         )]],
             'totals' => SalesPrint::totals($h['dp_net_amt'], $pct, $h['dp_tax_amt'], $h['dp_tot_amt'], Money::base()),
             'notes' => trim(t('deposit.note') . "\n" . (string) $h['dp_remarks']),
-            'signs' => [t('accounting.sign_payer'), t('accounting.sign_collector')],
+            'signs' => [SalesPrint::outside(t('accounting.sign_payer')), t('accounting.sign_collector')],
         ]);
     }
 

@@ -238,7 +238,7 @@ final class SalesReturnController
                 'rows' => array_map(fn ($l) => [$l['srd_line'], $l['srd_part'] . ' ' . ($l['pt_desc1'] ?? ''), $q($l['srd_qty']), $l['srd_um'],
                     $l['srd_loc'], $l['srd_lot']], self::lines($nbr))],
             'notes' => t('sales.sr_reason') . ': ' . $h['sr_reason'],
-            'signs' => [t('sales.sr_sign_customer'), t('sales.sr_sign_receiver')],
+            'signs' => [SalesPrint::outside(t('sales.sr_sign_customer')), t('sales.sr_sign_receiver')],
         ]);
     }
 

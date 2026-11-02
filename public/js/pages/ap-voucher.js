@@ -66,6 +66,7 @@
             const print = $('apv-print');
             print.hidden = !cfg.canPrint;
             print.href = Phai.url('/ap-vouchers/' + encodeURIComponent(cfg.nbr) + '/print');
+            Phai.signButton(print);
             const pay = $('apv-pay');
             pay.hidden = !(cfg.canPay && h.apv_status === 'O');
             pay.href = Phai.url('/vouchers/new?vendor=' + encodeURIComponent(h.apv_vd_code) + '&vo=' + encodeURIComponent(cfg.nbr));

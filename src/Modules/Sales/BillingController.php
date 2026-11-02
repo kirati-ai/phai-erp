@@ -121,7 +121,7 @@ final class BillingController
                 'words' => $baht ? BahtText::of((float) $h['bl_tot_amt']) : '',
             ],
             'notes' => $h['bl_remarks'],
-            'signs' => [t('sales.sign_receiver'), t('sales.sign_collector')],
+            'signs' => [SalesPrint::outside(t('sales.sign_receiver')), t('sales.sign_collector')],
         ]);
     }
 

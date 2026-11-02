@@ -6,21 +6,45 @@ namespace Phai\Modules\Sales;
 
 use Phai\Core\App;
 use Phai\Core\BahtText;
+use Phai\Core\Http\Request;
 use Phai\Core\View\View;
 use Phai\Modules\Master\Money;
+use Phai\Modules\System\Signature;
 
 /** Builds the pieces of printed documents (views/doc/print.php) — sales, purchasing and accounting. */
 final class SalesPrint
 {
+    /** The last document rendered, so System\Signature can read a document through its own print route. */
+    public static ?array $last = null;
+
     /**
      * @param array $doc title, nbr, meta [[label, value]], party, lines {columns, rows},
-     *                   totals [[label, value, bold]], words, notes, signs [labels]
+     *                   totals [[label, value, bold]], words, notes, signs [labels, or outside() for the other side]
      */
     public static function render(array $doc): string
     {
+        self::$last = $doc;
+        $path = Signature::currentPath();
+        $doc['boxes'] = Signature::boxes($doc, $path);
+        $doc['stamp'] = Signature::stamp($doc, $path, $doc['boxes']);
         $doc['company'] = self::company();
+        // signing happens on the page itself (?html=1 in a browser), never in the PDF
+        $sign = $path !== null && (Request::current()?->query['html'] ?? '') === '1' && Request::current()->path === $path;
         // the page title becomes the PDF file name: PO2026100001.pdf
-        return View::render('doc/print', ['title' => $doc['nbr'], 'docTitle' => $doc['nbr'], 'doc' => $doc], 'blank');
+        return View::render('doc/print', ['title' => $doc['nbr'], 'docTitle' => $doc['nbr'], 'doc' => $doc, 'signPath' => $sign ? $path : null,
+            'scripts' => $sign ? ['js/sign-pad.js', 'js/doc-sign.js'] : []], 'blank');
+    }
+
+    /** A signature box for the other side (customer, vendor, payer): signed on paper, never in PhaiERP. */
+    public static function outside(string $label): array
+    {
+        return ['label' => $label, 'outside' => true];
+    }
+
+    /** A box that approves (ผู้อนุมัติ, ผู้มีอำนาจลงนาม): signed only by the person asked to, or an ADMIN. */
+    public static function approve(string $label): array
+    {
+        return ['label' => $label, 'approve' => true];
     }
 
     /** The company block every printed document and report starts with (views/doc/company.php). */

@@ -41,6 +41,45 @@
         Phai.toast(Phai.t('saved'));
     });
 
+    // ------------------------------------------------------------ stamp (System\StampController): printed beside signed boxes
+    const stampImg = document.getElementById('co-stamp-img');
+    const stampChange = document.getElementById('co-stamp-change');
+    const stampRemove = document.getElementById('co-stamp-remove');
+    function showStamp(url) {
+        stampImg.hidden = !url;
+        stampImg.src = url || '';
+        document.getElementById('co-stamp-none').hidden = !!url;
+        if (stampRemove) stampRemove.hidden = !url;
+    }
+    Phai.api.get('/api/company/stamp').then((r) => showStamp(r.image));
+    if (stampChange) {
+        const stampFile = document.getElementById('co-stamp-file');
+        stampChange.addEventListener('click', () => stampFile.click());
+        stampFile.addEventListener('change', () => {
+            const f = stampFile.files[0];
+            stampFile.value = '';
+            if (!f) return;
+            (async () => {
+                Phai.busy(stampChange, true);
+                try {
+                    // trimmed, paper made transparent, at most 400 × 400 (js/sign-pad.js)
+                    const res = await Phai.api.put('/api/company/stamp', { image: await PhaiSign.fromFile(f, 400, 400) });
+                    showStamp(res.image);
+                    Phai.toast(Phai.t('saved'));
+                } catch (err) {
+                    Phai.toast(err.fields ? Object.values(err.fields).join(' ') : text.type, 'danger');
+                } finally {
+                    Phai.busy(stampChange, false);
+                }
+            })();
+        });
+        stampRemove.addEventListener('click', async () => {
+            if (!(await Phai.confirm(stampRemove.textContent.trim() + ' ?'))) return;
+            await Phai.api.del('/api/company/stamp');
+            showStamp(null);
+        });
+    }
+
     // ------------------------------------------------------------ logo
     const change = document.getElementById('co-logo-change');
     if (!change) return; // view only

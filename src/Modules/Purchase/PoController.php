@@ -146,7 +146,7 @@ final class PoController
             'lines'  => $lines,
             'totals' => SalesPrint::totals($h['po_net_amt'] ?? ((float) $h['po_tot_amt'] - (float) $h['po_tax_amt']), $h['po_tax_pct'], $h['po_tax_amt'], $h['po_tot_amt'], $h['po_curr']),
             'notes'  => trim($h['po_remarks'] . "\n" . Schedule::notes('PO', $nbr)),
-            'signs'  => [t('purchase.buyer'), t('purchase.approve')],
+            'signs'  => [t('purchase.buyer'), SalesPrint::approve(t('purchase.approve'))],
         ]);
     }
 

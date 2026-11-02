@@ -40,7 +40,7 @@ final class DocumentPrintController
                 'totals' => $print::totals($h['so_net_amt'] ?? ((float) $h['so_tot_amt'] - (float) $h['so_tax_amt']),
                     $h['so_tax_pct'], $h['so_tax_amt'], $h['so_tot_amt'], $h['so_curr']),
                 'notes' => trim(($h['so_remarks'] ?? '') . "\n" . \Phai\Modules\Master\Schedule::notes('SO', $nbr)),
-                'signs' => [t('sales.salesperson'), t('purchase.approve')],
+                'signs' => [t('sales.salesperson'), $print::approve(t('purchase.approve'))],
             ]);
         }
         // the other documents on the same A4 layout: their own lines, no field dump
@@ -77,7 +77,7 @@ final class DocumentPrintController
                         $print::date($l['prd_req_date'] ?? null), $l['prd_pref_vd'] ?? '', $m($l['prd_est_cost']), $m($l['prd_line_amt'])], $data['lines'])],
                 'totals' => $print::totals($net, $h['pr_tax_pct'] ?? 0, $h['pr_tax_amt'] ?? 0, $h['pr_tot_amt'] ?? $net, \Phai\Modules\Master\Money::base()),
                 'notes' => $h['pr_remarks'] ?? '',
-                'signs' => [$f('pr_req_by'), t('purchase.approve')],
+                'signs' => [$f('pr_req_by'), $print::approve(t('purchase.approve'))],
             ]);
         }
         if ($kind === 'landed-costs') {
@@ -96,7 +96,7 @@ final class DocumentPrintController
                         $c['allocated'] ? t('purchase.lc_state_done') : t('purchase.lc_state_wait'), $m($c['amount'])], $costs)],
                 'totals' => ['rows' => [[t('sales.total'), $m($total), true]], 'words' => \Phai\Core\BahtText::of($total)],
                 'notes' => implode("\n", array_map(fn ($l) => $l['rcd_part'] . ' ' . ($l['pt_desc1'] ?? '') . ' × ' . $q($l['rcd_qty_rcvd']) . ' = ' . $m($l['value']), $data['lines'] ?? [])),
-                'signs' => [t('accounting.sign_prepared'), t('accounting.sign_approved')],
+                'signs' => [t('accounting.sign_prepared'), $print::approve(t('accounting.sign_approved'))],
             ]);
         }
         if ($kind === 'work-orders') {
@@ -114,7 +114,7 @@ final class DocumentPrintController
                 // the steps of the job, so the floor has them on the same sheet
                 'notes' => trim(($h['wo_rmks'] ?? '') . "\n" . implode("\n", array_map(fn ($o) => t('production.op') . ' ' . $o['ro_op'] . ' · '
                     . $o['ro_wkctr'] . ' · ' . ($o['ro_desc'] ?? '') . ' · ' . $q($o['ro_run_time']) . ' ' . t('production.hours'), $data['ops'] ?? []))),
-                'signs' => [t('production.sign_ordered'), t('production.sign_supervisor')],
+                'signs' => [t('production.sign_ordered'), $print::approve(t('production.sign_supervisor'))],
             ]);
         }
         if ($kind === 'stock-counts') {
@@ -135,7 +135,7 @@ final class DocumentPrintController
                         : [$l['pit_tag'], $l['pit_loc'], $l['pit_part'] . ' ' . ($l['pt_desc1'] ?? ''), $l['pit_lot'] ?? '',
                         $q($l['pit_sys_qty']) . ' ' . ($l['pt_um'] ?? ''), $l['pit_count_qty'] === null ? '' : $q($l['pit_count_qty']),
                         $l['pit_count_qty'] === null ? '' : $q($l['pit_variance']), $l['pit_counter'] ?? ''], $data['tags'] ?? [])],
-                'signs' => [t('stock.sign_counter'), t('stock.sign_checker')],
+                'signs' => [t('stock.sign_counter'), $print::approve(t('stock.sign_checker'))],
             ]);
         }
         if ($kind === 'journals') {
@@ -152,7 +152,7 @@ final class DocumentPrintController
                         (float) $l['dr'] ? $m($l['dr']) : '', (float) $l['cr'] ? $m($l['cr']) : ''], array_keys($data['lines']), $data['lines'])],
                 'totals' => ['rows' => [[t('accounting.debit'), $m($dr), false], [t('accounting.credit'), $m($cr), true]], 'words' => ''],
                 'notes' => $h['desc'] ?? '',
-                'signs' => [t('accounting.sign_prepared'), t('accounting.sign_approved')],
+                'signs' => [t('accounting.sign_prepared'), $print::approve(t('accounting.sign_approved'))],
             ]);
         }
         if ($kind === 'payables') {
@@ -210,7 +210,7 @@ final class DocumentPrintController
                     return $t;
                 })(),
                 'notes' => $h['ap_remarks'] ?? '',
-                'signs' => [t('accounting.sign_prepared'), t('accounting.sign_approved')],
+                'signs' => [t('accounting.sign_prepared'), $print::approve(t('accounting.sign_approved'))],
             ]);
         }
         if ($kind === 'receipts') {
@@ -228,7 +228,7 @@ final class DocumentPrintController
                     ['label' => t('stock.loc')], ['label' => t('stock.lot')]],
                     'rows' => array_map(fn ($row) => [$row['rcd_line'], $row['rcd_part'] . ' ' . ($row['pt_desc1'] ?? ''),
                         $q($row['rcd_qty_rcvd']), $row['rcd_um'], $row['rcd_loc'], $row['rcd_lot'] ?? ''], $data['lines'])],
-                'notes' => $h['rc_remarks'] ?? '', 'signs' => [t('stock.user'), t('purchase.approve')],
+                'notes' => $h['rc_remarks'] ?? '', 'signs' => [t('stock.user'), $print::approve(t('purchase.approve'))],
             ]);
         }
         return View::render('doc/detail-print', ['title' => $nbr, 'docTitle' => $nbr,

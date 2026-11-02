@@ -76,6 +76,18 @@
         });
     }
 
+    // ลายเซ็นของฉัน: drawn or uploaded once, then put in the signature boxes of documents (js/sign-pad.js, js/doc-sign.js)
+    document.getElementById('phai-my-sign')?.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const text = JSON.parse(document.getElementById('phai-sign-text').textContent);
+        const { image } = await Phai.api.get('/api/me/sign');
+        PhaiSign.open({
+            text, w: 600, h: 200, image,
+            save: async (png) => { await Phai.api.put('/api/me/sign', { image: png }); Phai.toast(Phai.t('saved')); },
+            remove: async () => { await Phai.api.del('/api/me/sign'); Phai.toast(Phai.t('deleted')); },
+        });
+    });
+
     // ธีม (AuthController::THEMES): a dot per theme in the user menu; a click shows it at once (the menu stays open to try
     // another) and keeps it with the user (us_theme) — ไผ่ยามค่ำ is dark (data-bs-theme), the colours are data-phai-theme
     const themePick = document.getElementById('phai-theme');

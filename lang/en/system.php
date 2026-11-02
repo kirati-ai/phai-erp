@@ -28,6 +28,8 @@ return [
     'logo_none' => 'No logo yet',
     'logo_type' => 'Use a PNG, JPG or WebP image',
     'logo_size' => 'The image must be 1 MB or smaller',
+    'sign_type' => 'A signature or stamp must be a PNG image',
+    'sign_size' => 'A signature or stamp must be 300 KB or smaller',
     'logo_write' => 'Cannot save the logo (storage/uploads is not writable)',
     'attach_bad'  => 'Cannot read the file',
     'attach_type' => 'Only pictures (JPG, PNG, WebP) or PDF',

@@ -168,6 +168,7 @@
             const print = document.getElementById('st-print');
             print.hidden = !cfg.canPrint;
             print.href = Phai.url(cfg.page + '/' + encodeURIComponent(cfg.nbr) + '/print');
+            Phai.signButton(print);
             if (h.whtc_nbr && cfg.canPrint) {
                 const w = document.getElementById('st-wht');
                 w.hidden = false;
