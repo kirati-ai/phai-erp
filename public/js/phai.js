@@ -800,7 +800,13 @@
         pager.className = 'phai-pager';
         (table.closest('.table-responsive') || table).insertAdjacentElement('afterend', pager);
 
+        // the grid's card stays hidden until its first rows come, so an empty table with a spinner does not flash
+        // on every page open; set only once reload() runs, so a grid that never loads is never left hidden
+        const box = table.closest('.card') || table;
+        let shown = false;
+
         async function reload() {
+            if (!shown) box.classList.add('phai-wait');
             await layoutReady;
             const mine = ++seq;
             table.classList.add('is-loading');
@@ -813,7 +819,11 @@
             } catch (e) {
                 // toast already shown
             } finally {
-                if (mine === seq) table.classList.remove('is-loading');
+                if (mine === seq) {
+                    table.classList.remove('is-loading');
+                    box.classList.remove('phai-wait');
+                    shown = true;
+                }
             }
         }
 
