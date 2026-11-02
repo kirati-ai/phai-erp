@@ -258,7 +258,7 @@ final class InvoiceController
             'notes'  => trim(($h['ih_reason'] ? t('accounting.reason') . ': ' . ArInvoiceController::reasonText($h['ih_reason']) . "\n" : '')
                 . (!empty($h['ih_vat_on_rcpt']) ? t('sales.invoice_service_note') . "\n" : '')
                 . (string) $h['ih_remarks']),
-            'signs'  => [t('sales.sign_receiver'), t('sales.sign_authorized')],
+            'signs'  => [SalesPrint::outside(t('sales.sign_receiver')), SalesPrint::approve(t('sales.sign_authorized'))],
         ]);
     }
 

@@ -244,7 +244,7 @@ final class PurchaseReturnController
                     $l['rtd_lot'], $m($l['rtd_price']), $m($l['rtd_amt'])], self::lines($nbr))],
             'totals' => SalesPrint::totals($h['rt_net_amt'], null, $h['rt_tax_amt'], $h['rt_tot_amt'], \Phai\Modules\Master\Money::base()),
             'notes'  => t('purchase.rt_reason') . ': ' . $h['rt_reason'],
-            'signs'  => [t('purchase.rt_sign_sender'), t('purchase.rt_sign_vendor')],
+            'signs'  => [t('purchase.rt_sign_sender'), SalesPrint::outside(t('purchase.rt_sign_vendor'))],
         ]);
     }
 

@@ -168,6 +168,29 @@ final class Router
         };
     }
 
+    /**
+     * The right a GET of $path needs, without calling it: ['codes' => programs (any one will do), 'action' => 'print'];
+     * codes empty when a login is enough. Null when no route matches. (System\Signature: who may be asked to sign.)
+     */
+    public function permission(string $path): ?array
+    {
+        $routes = $this->routes;
+        usort($routes, fn ($a, $b) => str_contains($a['path'], '{') <=> str_contains($b['path'], '{'));
+        foreach ($routes as $route) {
+            if ($route['method'] !== 'GET' || !preg_match($route['regex'], $path)) {
+                continue;
+            }
+            $method = new ReflectionMethod($route['class'], $route['action']);
+            $attr = isset($route['resource']) ? new Program($route['resource']::CODE)
+                : ($method->getDeclaringClass()->getAttributes(Program::class)[0] ?? null)?->newInstance();
+            return [
+                'codes'  => $attr?->codes ?? [],
+                'action' => ($method->getAttributes(Action::class)[0] ?? null)?->newInstance()->name ?? 'view',
+            ];
+        }
+        return null;
+    }
+
     /** Every route needs a login unless marked #[Guest]; #[Program] adds a permission check. */
     private static function authorize(ReflectionMethod $method, Request $request, ?string $program = null): void
     {

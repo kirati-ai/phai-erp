@@ -1916,5 +1916,27 @@
         return { load: (box) => load(box, true), send, button, mark, open };
     })();
 
-    window.Phai = { viewFields, pick, api, ApiError, toast, confirm: confirmBox, busy, form, grid, geo, badge, stockShort, cancelButtons, esc, t, url, shrinkImage, month, files };
+    /**
+     * A "ลายเซ็น" button right after a document's print link: the same page as HTML (?html=1), where its signature
+     * boxes are signed (System\Signature, js/doc-sign.js). It follows the link's href and hidden as the page sets them.
+     */
+    function signButton(print) {
+        if (!print || print.nextElementSibling?.hasAttribute('data-sign-for')) return;
+        const a = document.createElement('a');
+        a.className = 'btn btn-sm';
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.setAttribute('data-sign-for', '');
+        a.innerHTML = `<i class="ti ti-writing-sign me-1"></i>${esc(t('sign_doc'))}`;
+        const sync = () => {
+            const href = print.getAttribute('href') || '';
+            a.href = href.split('?')[0] + '?html=1';
+            a.hidden = print.hidden || !href || href === '#';
+        };
+        new MutationObserver(sync).observe(print, { attributes: true, attributeFilter: ['href', 'hidden'] });
+        sync();
+        print.after(a);
+    }
+
+    window.Phai = { viewFields, pick, api, ApiError, toast, confirm: confirmBox, busy, form, grid, geo, badge, stockShort, cancelButtons, esc, t, url, shrinkImage, month, files, signButton };
 })();

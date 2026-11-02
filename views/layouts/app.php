@@ -169,6 +169,10 @@ $company = \Phai\Core\App::db()->value('SELECT co_name FROM co_mstr WHERE co_id 
             <?php if ($helpFile): ?>
                 <button type="button" class="phai-help-btn" data-bs-toggle="offcanvas" data-bs-target="#phai-help"><i class="ti ti-help-circle me-1"></i><?= e(t('common.help')) ?></button>
             <?php endif ?>
+            <?php $signWaiting = \Phai\Modules\System\Signature::waitingCount(); // documents asking for my signature ?>
+            <?php if ($signWaiting): ?>
+                <a href="<?= e(url('/signatures')) ?>" class="phai-help-btn" title="<?= e(t('sign.page')) ?>"><i class="ti ti-writing-sign me-1"></i><?= e(t('sign.waiting')) ?> <span class="badge bg-red text-white ms-1"><?= $signWaiting ?></span></a>
+            <?php endif ?>
             <?php $other = Lang::locale() === 'th' ? 'en' : 'th'; // the flag of the language a click switches to ?>
             <button type="button" class="phai-lang-btn" id="phai-lang" data-lang="<?= $other ?>" title="<?= e(t('common.lang_' . $other)) ?>" aria-label="<?= e(t('common.lang_' . $other)) ?>"><?= \Phai\Core\View\View::partial('partials/flag', ['lang' => $other]) ?><span><?= strtoupper($other) ?></span></button>
             <?php
@@ -194,6 +198,13 @@ $company = \Phai\Core\App::db()->value('SELECT co_name FROM co_mstr WHERE co_id 
                     </div>
                     <a href="#" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#phai-profile">
                         <i class="ti ti-user-edit me-2"></i><?= e(t('auth.profile')) ?>
+                    </a>
+                    <a href="#" class="dropdown-item" id="phai-my-sign">
+                        <i class="ti ti-signature me-2"></i><?= e(t('sign.my_sign')) ?>
+                    </a>
+                    <a href="<?= e(url('/signatures')) ?>" class="dropdown-item">
+                        <i class="ti ti-writing-sign me-2"></i><?= e(t('sign.page')) ?>
+                        <?php if ($signWaiting): ?><span class="badge bg-red text-white ms-auto"><?= $signWaiting ?></span><?php endif ?>
                     </a>
                     <a href="#" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#phai-password">
                         <i class="ti ti-key me-2"></i><?= e(t('auth.change_password')) ?>
@@ -224,6 +235,7 @@ $company = \Phai\Core\App::db()->value('SELECT co_name FROM co_mstr WHERE co_id 
                 <div class="phai-toolbar justify-content-end">
                     <a class="btn btn-sm" href="<?= e(url('/' . $printParts[0])) ?>"><i class="ti ti-arrow-left me-1"></i><?= e(t('js.back')) ?></a>
                     <a class="btn btn-sm" target="_blank" rel="noopener" href="<?= e(url('/documents/' . $printParts[0] . '/' . rawurlencode($printParts[1]) . '/print')) ?>"><i class="ti ti-printer me-1"></i><?= e(t('purchase.print')) ?> / PDF</a>
+                    <a class="btn btn-sm" target="_blank" rel="noopener" href="<?= e(url('/documents/' . $printParts[0] . '/' . rawurlencode($printParts[1]) . '/print')) ?>?html=1"><i class="ti ti-writing-sign me-1"></i><?= e(t('js.sign_doc')) ?></a>
                 </div>
             <?php endif ?>
             <?php if (!$embed) foreach ($queues ?? [] as $queueCfg) echo \Phai\Core\View\View::partial('partials/queue', ['q' => $queueCfg]); // work waiting from the step before ?>
@@ -330,6 +342,8 @@ $company = \Phai\Core\App::db()->value('SELECT co_name FROM co_mstr WHERE co_id 
 <script src="<?= e(asset('js/phai.js')) ?>"></script>
 <script src="<?= e(asset('js/xlsx.js')) ?>"></script>
 <script src="<?= e(asset('js/datepicker.js')) ?>"></script>
+<script id="phai-sign-text" type="application/json"><?= json_encode(Lang::group(Lang::locale(), 'sign') ?: Lang::group('th', 'sign'), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
+<script src="<?= e(asset('js/sign-pad.js')) ?>"></script>
 <script src="<?= e(asset('js/account.js')) ?>"></script>
 <script src="<?= e(asset('js/shell.js')) ?>"></script>
 <?php if (!empty($queues)): ?><script src="<?= e(asset('js/queue.js')) ?>"></script><?php endif ?>

@@ -23,7 +23,8 @@ final class QcResource extends Resource
     protected static ?string $numberDate = 'qc_date';
     // a QC record is a document: changed only through the work order that made it (and not once it is closed)
     protected static bool $locked = true;
-    protected static ?string $print = '/qc/{key}/print';
+    // the printed page (print, PDF and its signature boxes: System\Signature), not the PDF straight away
+    protected static ?string $print = '/qc/{key}/print?html=1';
     protected static array $badge = ['qc_result' => ['PASS' => 'green', 'PARTIAL' => 'orange', 'FAIL' => 'red', 'REWORK' => 'yellow']];
     protected static array $search = ['qc_test_nbr', 'qc_ref_doc', 'qc_part', 'qc_lot'];
     protected static array $list = ['qc_test_nbr', 'qc_date', 'qc_ref_doc', 'qc_part', 'qc_lot', 'qc_qty_pass', 'qc_qty_fail', 'qc_result', 'qc_inspector'];

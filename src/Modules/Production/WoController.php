@@ -464,7 +464,7 @@ final class WoController
             'totals' => ['rows' => [[t('sales.total'), $m($s['wis_amt']), true]], 'words' => ''],
             'signs' => $s['wis_type'] === 'R'
                 ? [t('production.sign_returner'), t('production.sign_storekeeper')]
-                : [t('production.sign_requester'), t('production.sign_storekeeper'), t('production.sign_approver')],
+                : [t('production.sign_requester'), t('production.sign_storekeeper'), \Phai\Modules\Sales\SalesPrint::approve(t('production.sign_approver'))],
         ]);
     }
 

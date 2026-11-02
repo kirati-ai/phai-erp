@@ -28,6 +28,8 @@ return [
     'logo_none' => 'ยังไม่มีโลโก้',
     'logo_type' => 'ใช้ได้เฉพาะรูป PNG, JPG หรือ WebP',
     'logo_size' => 'รูปต้องไม่เกิน 1 MB',
+    'sign_type' => 'ลายเซ็นหรือตราประทับต้องเป็นรูป PNG',
+    'sign_size' => 'ลายเซ็นหรือตราประทับต้องไม่เกิน 300 KB',
     'logo_write' => 'บันทึกไฟล์โลโก้ไม่ได้ (storage/uploads เขียนไม่ได้)',
     'attach_bad'  => 'อ่านไฟล์ไม่ได้',
     'attach_type' => 'แนบได้เฉพาะรูป (JPG, PNG, WebP) หรือ PDF',

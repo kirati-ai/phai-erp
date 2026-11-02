@@ -358,6 +358,7 @@
         $('pc-v-edit').hidden = !d.can.edit;
         $('pc-v-print').hidden = !d.can.print;
         $('pc-v-print').href = Phai.url(`/petty-cash/${encodeURIComponent(h.cb_nbr)}/print`);
+        Phai.signButton($('pc-v-print'));
         $('pc-v-wht').hidden = !d.wht;
         if (d.wht) $('pc-v-wht').href = Phai.url(`/wht/${encodeURIComponent(d.wht)}/print`);
         viewModal.show();

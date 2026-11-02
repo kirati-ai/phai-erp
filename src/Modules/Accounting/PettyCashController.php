@@ -334,7 +334,7 @@ final class PettyCashController
                             'rows' => $rows],
                 'totals' => $totals,
                 'notes'  => (string) $h['cb_remarks'],
-                'signs'  => [t('pettycash.sign_payer'), t('pettycash.sign_payee'), t('pettycash.sign_approver')],
+                'signs'  => [t('pettycash.sign_payer'), SalesPrint::outside(t('pettycash.sign_payee')), SalesPrint::approve(t('pettycash.sign_approver'))],
             ]);
         }
         $what = self::rowText($h + ['amt' => 0], $h['cb_holder']);
@@ -347,8 +347,8 @@ final class PettyCashController
             'notes'  => '',
             'signs'  => match ($h['cb_type']) {
                 'TF', 'TO' => [t('pettycash.sign_sender'), t('pettycash.sign_receiver')],
-                'IN' => [t('pettycash.sign_payer'), t('pettycash.sign_holder')],
-                default => [t('pettycash.sign_holder'), t('pettycash.sign_approver')],
+                'IN' => [SalesPrint::outside(t('pettycash.sign_payer')), t('pettycash.sign_holder')],
+                default => [t('pettycash.sign_holder'), SalesPrint::approve(t('pettycash.sign_approver'))],
             },
         ]);
     }

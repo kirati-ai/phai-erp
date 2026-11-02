@@ -49,13 +49,61 @@
     .doc-sign-date { font-size: 10.5px; color: var(--muted); margin-top: 2px; }
     .doc-foot { display: flex; justify-content: space-between; margin-top: 18px; padding-top: 6px; border-top: 1px solid var(--line); font-size: 10px; color: #000; }
 
+    /* documents (doc/print: .doc-form) — reports keep the look above. Title and number top right, the party beside a
+       tinted box of the document's details, an item table that runs down to the totals, and a row of signature boxes. */
+    .doc-form { --tint: #e8f4ee; padding-top: 13mm; }
+    /* phai.css makes every table cell on screens 9px and not bold; a printed page is read at arm's length */
+    .doc-form table td, .doc-form table tbody th { font-size: 12px !important; }
+    .doc-form .doc-meta th, .doc-form .doc-totals tr.bold th, .doc-form .doc-totals tr.bold td, .doc-form .doc-totals tr.grand th,
+    .doc-form .doc-totals tr.grand td, .doc-form table td strong { font-weight: 600 !important; }
+    .doc-form .doc-lines tr.doc-sub td { font-size: 10.5px !important; }
+    .doc-form .doc-head { align-items: center; margin-bottom: 12px; }
+    .doc-form .doc-title { font-size: 23px; margin-bottom: 0; line-height: 1.25; }
+    .doc-form .doc-nbr { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .doc-info { display: grid; grid-template-columns: 1fr 72mm; gap: 14px; align-items: stretch; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+    .doc-info-solo { grid-template-columns: 1fr 72mm; }
+    .doc-info-solo .doc-meta { grid-column: 2; }
+    .doc-party { padding: 2px 0; }
+    .doc-party .doc-label { font-size: 11px; font-weight: 600; color: var(--accent); }
+    .doc-party-name { font-size: 14px; }
+    .doc-form .doc-meta { margin: 0; width: 100%; background: var(--tint); border-radius: 8px; border-collapse: separate; padding: 8px 12px; align-self: start; }
+    .doc-form .doc-meta th { text-align: left; color: #000; font-weight: 600; padding: 2px 10px 2px 0; width: 1%; }
+    .doc-form .doc-meta td { white-space: normal; }
+    /* the item table runs down to the totals (its last row, .doc-fill, takes the room left on the page) */
+    .doc-table { flex: 1 1 auto; display: flex; flex-direction: column; margin-top: 12px; min-height: 40mm; }
+    .doc-form .doc-lines { margin-top: 0; flex: 1 1 auto; height: 100%; }
+    .doc-form .doc-lines th { background: var(--tint); border-bottom: 0; padding: 8px; font-size: 12px; }
+    .doc-form .doc-lines th:first-child { border-radius: 8px 0 0 8px; }
+    .doc-form .doc-lines th:last-child { border-radius: 0 8px 8px 0; }
+    .doc-form .doc-lines td { font-size: 12px; padding: 7px 8px; height: 1px; }
+    .doc-form .doc-lines tbody tr:nth-child(even) td { background: transparent; }
+    .doc-form .doc-lines tr.doc-sub td { font-size: 10.5px; color: #555; }
+    .doc-form .doc-lines tr.doc-fill td { height: auto; border-bottom: 1px solid var(--line); padding: 0; }
+    .doc-form .doc-summary { grid-template-columns: 1fr 80mm; margin-top: 10px; }
+    .doc-form .doc-words-text { background: none; padding: 0; font-weight: 600; }
+    .doc-form .doc-totals tr.grand th, .doc-form .doc-totals tr.grand td { background: var(--tint); color: #000; font-size: 17px !important; padding-top: 9px; padding-bottom: 9px; }
+    .doc-form .doc-totals tr.grand td { color: var(--accent); }
+    .doc-form .doc-notes { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); display: grid; grid-template-columns: 22mm 1fr; }
+    .doc-form .doc-notes .doc-label { font-size: 12px; font-weight: 600; color: #000; }
+    .doc-form .doc-signs { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); gap: 10px; }
+    .doc-sign { display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 0; position: relative; }
+    .doc-form .doc-sign-label { order: 0; margin: 0 0 2px; font-weight: 600; font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+    /* a signature is at most 40 × 15 mm: the 600 × 200 px image sign-pad.js makes prints sharp at that size */
+    .doc-sign-area { height: 17mm; width: 100%; display: flex; align-items: flex-end; justify-content: center; border-bottom: 1px dotted #8a94a3; }
+    .doc-sign-area img { max-height: 15mm; max-width: min(40mm, 100%); object-fit: contain; }
+    .doc-sign-name { font-weight: 600; font-size: 11.5px; min-height: 17px; margin-top: 3px; max-width: 100%; overflow-wrap: anywhere; }
+    .doc-form .doc-sign-date { margin-top: 0; font-size: 11px; color: #000; }
+    .doc-stamp-area { width: 26mm; height: 26mm; display: flex; align-items: center; justify-content: center; }
+    .doc-stamp-area img { max-width: 26mm; max-height: 26mm; object-fit: contain; }
+    .doc-stamp-blank { border: 1px dashed #aab2bd; border-radius: 4px; }
+
 
     @page { size: A4; margin: 0; }
     @media print {
         body { background: #fff; }
         .no-print { display: none !important; }
         .doc { margin: 0; box-shadow: none; min-height: 296mm; }
-        .doc::before, .doc-lines th, .doc-lines tbody tr:nth-child(even) td, .doc-words-text, .doc-totals tr.grand th, .doc-totals tr.grand td {
+        .doc::before, .doc-lines th, .doc-lines tbody tr:nth-child(even) td, .doc-words-text, .doc-totals tr.grand th, .doc-totals tr.grand td, .doc-form .doc-meta {
             -webkit-print-color-adjust: exact; print-color-adjust: exact;
         }
         .doc-lines tr { break-inside: avoid; }

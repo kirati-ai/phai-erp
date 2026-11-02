@@ -16,6 +16,7 @@ return [
     'edit' => 'Edit',
     'view' => 'View',
     'print' => 'Print',
+    'sign_doc' => 'Signatures',
     'delete' => 'Delete',
     'undo' => 'Undo (cancel)',
     'yes' => 'Yes',

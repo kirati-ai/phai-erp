@@ -270,7 +270,7 @@ final class ApVoucherController
             ],
             'totals' => ['rows' => $rows, 'words' => BahtText::of($net)],
             'notes'  => $h['apv_remarks'] ?? '',
-            'signs'  => [t('accounting.apv_sign_prepared'), t('accounting.apv_sign_checked'), t('accounting.apv_sign_approved'), t('accounting.apv_sign_received')],
+            'signs'  => [t('accounting.apv_sign_prepared'), SalesPrint::approve(t('accounting.apv_sign_checked')), SalesPrint::approve(t('accounting.apv_sign_approved')), SalesPrint::outside(t('accounting.apv_sign_received'))],
         ]);
     }
 

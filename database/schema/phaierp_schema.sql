@@ -494,6 +494,7 @@ CREATE TABLE `co_mstr` (
   `co_email` varchar(100) DEFAULT NULL,
   `co_phone` varchar(50) DEFAULT NULL,
   `co_logo_path` varchar(255) DEFAULT NULL COMMENT 'Path ไฟล์โลโก้บริษัท',
+  `co_stamp_path` varchar(40) DEFAULT NULL COMMENT 'ไฟล์ตราประทับบริษัท (PNG พื้นใส)',
   `co_base_curr` varchar(3) DEFAULT 'THB' COMMENT 'สกุลเงินหลักทางบัญชี',
   `co_idle_min` smallint(5) unsigned NOT NULL DEFAULT 0 COMMENT 'ออกจากระบบเมื่อไม่ใช้งาน (นาที, 0 = ไม่ออก)',
   `co_remarks` text DEFAULT NULL,
@@ -1794,6 +1795,7 @@ CREATE TABLE `us_mstr` (
   `us_pins` varchar(1000) DEFAULT NULL COMMENT 'เมนูที่ปักหมุดไว้ใต้ เรียนรู้ ERP (mnu_code คั่นด้วย , ตามลำดับที่ปัก)',
   `us_timezone` varchar(50) DEFAULT 'Asia/Bangkok',
   `us_avatar` varchar(255) DEFAULT NULL,
+  `us_sign` varchar(40) DEFAULT NULL COMMENT 'ไฟล์ลายเซ็น (PNG พื้นใส)',
   `us_last_state` varchar(50) DEFAULT NULL,
   `us_last_state_date` date DEFAULT NULL,
   `us_last_login` datetime DEFAULT NULL,
@@ -2381,3 +2383,26 @@ CREATE TABLE `att_det` (
   PRIMARY KEY (`att_id`),
   KEY `att_doc` (`att_doc`, `att_nbr`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Attached files';
+
+CREATE TABLE `sig_det` (
+  `sig_id` int(11) NOT NULL AUTO_INCREMENT,
+  `sig_path` varchar(200) NOT NULL COMMENT 'หน้าพิมพ์ของเอกสาร เช่น /invoices/IV2026100001/print',
+  `sig_slot` tinyint(4) NOT NULL COMMENT 'ช่องลงนามที่ (เริ่ม 0 จากซ้าย)',
+  `sig_label` varchar(100) NOT NULL COMMENT 'ชื่อช่องลงนาม',
+  `sig_title` varchar(255) NOT NULL COMMENT 'ชื่อเอกสารและเลขที่ สำหรับรายการ',
+  `sig_userid` varchar(50) NOT NULL COMMENT 'ผู้ลงนาม',
+  `sig_status` char(1) NOT NULL DEFAULT 'R' COMMENT 'R รอเซ็น, S เซ็นแล้ว, X ไม่อนุมัติ, C ยกเลิก',
+  `sig_note` varchar(255) DEFAULT NULL COMMENT 'ข้อความถึงผู้เซ็น หรือเหตุผลที่ไม่อนุมัติ',
+  `sig_req_by` varchar(50) DEFAULT NULL COMMENT 'ผู้ขอให้เซ็น (ว่าง = เซ็นเอง)',
+  `sig_at` datetime DEFAULT NULL COMMENT 'เวลาที่เซ็นหรือไม่อนุมัติ',
+  `sig_ip` varchar(45) DEFAULT NULL,
+  `sig_hash` char(64) DEFAULT NULL COMMENT 'ลายนิ้วมือของเนื้อหาเอกสารตอนเซ็น: แก้เอกสารแล้วลายเซ็นไม่แสดง',
+  `sig_image` mediumtext DEFAULT NULL COMMENT 'ภาพลายเซ็นตอนเซ็น (data URL) เปลี่ยนลายเซ็นภายหลังไม่กระทบเอกสารเก่า',
+  `created_by` varchar(50) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  `updated_by` varchar(50) DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`sig_id`),
+  KEY `sig_path` (`sig_path`, `sig_slot`),
+  KEY `sig_userid` (`sig_userid`, `sig_status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Signatures on printed documents';

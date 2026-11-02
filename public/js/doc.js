@@ -314,6 +314,13 @@
                 if (a.target) link.target = a.target;
                 link.innerHTML = actionLabel(a);
                 actionsBox.appendChild(link);
+                if (a.name === 'print') { // the printed page, open to sign its boxes (System\Signature, js/doc-sign.js)
+                    const sign = link.cloneNode(false);
+                    sign.href = link.href.split('?')[0] + '?html=1';
+                    sign.className = 'btn btn-sm';
+                    sign.innerHTML = `<i class="ti ti-writing-sign me-1"></i>${Phai.esc(Phai.t('sign_doc'))}`;
+                    actionsBox.appendChild(sign);
+                }
                 continue;
             }
             const btn = document.createElement('button');

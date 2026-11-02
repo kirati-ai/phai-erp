@@ -153,6 +153,7 @@
         if ($('sc-print')) {
             $('sc-print').hidden = !!edit || !data.release;
             $('sc-print').href = Phai.url(`/schedules/${cfg.type}/${encodeURIComponent(cfg.nbr)}/print?` + new URLSearchParams({ rlse: data.release?.id ?? '' }));
+            Phai.signButton($('sc-print'));
         }
         $('sc-undo').hidden = !edit;
         $('sc-save').hidden = !edit;

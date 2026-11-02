@@ -120,7 +120,7 @@ final class PaymentController
                 'words' => BahtText::of($net),
             ],
             'notes' => $h['vo_remarks'],
-            'signs' => [t('accounting.sign_prepared'), t('accounting.sign_approved'), t('accounting.sign_receiver')],
+            'signs' => [t('accounting.sign_prepared'), SalesPrint::approve(t('accounting.sign_approved')), SalesPrint::outside(t('accounting.sign_receiver'))],
         ]);
     }
 

@@ -392,7 +392,8 @@
                 <td class="small">${Phai.esc(s.wis_reason ?? '')}</td>
                 <td class="text-nowrap">${working() && s.wis_status === 'A' ? `<button type="button" class="phai-act-btn" data-cancel-slip="${Phai.esc(s.wis_nbr)}"
                     title="${Phai.esc(cfg.text.slip_cancel)}" aria-label="${Phai.esc(cfg.text.slip_cancel)}"><i class="ti ti-arrow-back-up"></i></button>` : ''}${cfg.canPrint ? `<a class="phai-act-btn" target="_blank" rel="noopener" title="${Phai.esc(Phai.t('print'))}" aria-label="${Phai.esc(Phai.t('print'))}"
-                    href="${Phai.esc(Phai.url('/work-orders/issues/' + encodeURIComponent(s.wis_nbr) + '/print'))}"><i class="ti ti-printer"></i></a>` : ''}</td>
+                    href="${Phai.esc(Phai.url('/work-orders/issues/' + encodeURIComponent(s.wis_nbr) + '/print'))}"><i class="ti ti-printer"></i></a><a class="phai-act-btn" target="_blank" rel="noopener" title="${Phai.esc(Phai.t('sign_doc'))}" aria-label="${Phai.esc(Phai.t('sign_doc'))}"
+                    href="${Phai.esc(Phai.url('/work-orders/issues/' + encodeURIComponent(s.wis_nbr) + '/print?html=1'))}"><i class="ti ti-writing-sign"></i></a>` : ''}</td>
             </tr>` + s.lines.map((l) => `
             <tr class="${s.wis_status === 'X' ? 'text-secondary text-decoration-line-through' : ''}">
                 <td class="ps-4">${Phai.esc(l.tr_part)} <span class="text-secondary small">${Phai.esc(l.pt_desc1 ?? '')}</span></td>
