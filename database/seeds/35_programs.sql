@@ -81,4 +81,5 @@ INSERT INTO `prog_mstr` (`prog_code`, `prog_name`, `prog_module`, `prog_type`) V
 ('roles','บทบาทและสิทธิ์','System','MENU'),
 ('menus','เมนู','System','MENU'),
 ('settings-ai','ตั้งค่า AI','System','MENU'),
-('ai-chat','ถาม AI','AI','MENU');
+('ai-chat','ถาม AI','AI','MENU'),
+('envelopes','ซองเอกสารลงนาม','Esign','MENU');

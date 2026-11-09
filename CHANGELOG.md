@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **e-Document Sign** — envelopes of documents from outside (PDF or pictures) with attachments, signed in steps by people in the company (sign, approve, receive a copy); an editor with field tools, copy to / remove from many pages, linked copies, alignment, undo; signing with a saved or drawn signature, declining with a reason, reminders, withdrawing, changing a signer; received / opened / signed times on every signature; a final PDF with a footer and QR code on every page and evidence pages (page counts, SHA-256 of each file and page, signers, hash-chained history); a check page that finds changed pages. Menu **Signed documents**.
+- **PdfKit** — reading and writing PDFs in PHP (pages, object and cross-reference streams, overlays, flattening form fields), so signed documents need no PDF tool on the server; **Qr** — QR codes as SVG.
+- **PDF.js** 4.10.38 (Apache-2.0) in `public/vendor/pdfjs/` for showing envelope pages.
+
 ## 1.0.0
 
 First release.

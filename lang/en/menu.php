@@ -128,4 +128,8 @@ return [
     '9.16' => 'Menus',
     '9.50' => 'Transactions',
     '9.51' => 'Users',
+    '7.0'  => 'Signed documents',
+    '7.50' => 'Transactions',
+    '7.51' => 'Envelopes',
+    '7.52' => 'Check a document',
 ];

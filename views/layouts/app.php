@@ -173,6 +173,10 @@ $company = \Phai\Core\App::db()->value('SELECT co_name FROM co_mstr WHERE co_id 
             <?php if ($signWaiting): ?>
                 <a href="<?= e(url('/signatures')) ?>" class="phai-help-btn" title="<?= e(t('sign.waiting')) ?>" aria-label="<?= e(t('sign.waiting')) ?>"><i class="ti ti-writing-sign"></i><span class="badge bg-red text-white ms-1"><?= $signWaiting ?></span></a>
             <?php endif ?>
+            <?php $envWaiting = \Phai\Modules\Esign\Envelope::waitingCount(); // envelopes waiting for my signature ?>
+            <?php if ($envWaiting): ?>
+                <a href="<?= e(url('/envelopes')) ?>" class="phai-help-btn" title="<?= e(t('esign.tab_waiting')) ?>" aria-label="<?= e(t('esign.tab_waiting')) ?>"><i class="ti ti-mail-opened"></i><span class="badge bg-red text-white ms-1"><?= $envWaiting ?></span></a>
+            <?php endif ?>
             <div class="dropdown"><?php // ธีม on the bar itself: a dot per theme, a click switches at once and keeps it with the user ?>
                 <button type="button" class="phai-help-btn" data-bs-toggle="dropdown" data-bs-auto-close="outside"  title="<?= e(t('auth.theme')) ?>" aria-label="<?= e(t('auth.theme')) ?>"><i class="ti ti-palette"></i></button>
                 <div class="dropdown-menu dropdown-menu-end p-0">

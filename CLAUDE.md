@@ -42,6 +42,8 @@ ERP โอเพนซอร์ส PHP ล้วน สำหรับบริ�
 | `Numbering` | `Numbering::next('PO', $h['po_date'])` ได้เลขที่เอกสารถัดไปจากตาราง `_ctrl` — ส่งวันที่ของเอกสารเสมอ ปี/เดือนในเลขที่มาจากวันที่นั้น (เอกสารย้อนหลังต่อจากเลขสูงสุดของเดือนนั้น) (คำนำหน้า + รูปแบบ `<stem>_format`: YM4 = PO2026100001 เริ่มใหม่ทุกเดือน, yM4, Y5, N6 = PO000001) เรียกภายใน transaction ที่บันทึกเอกสาร — หน้าสร้างใหม่ส่ง `'docNbr' => Numbering::peek('PO')` ให้ layout แสดงเลขที่จะได้ (ไม่จองเลข) — ตั้งค่าที่ `/settings/numbering` (ทุกเอกสาร) หรือตารางท้ายหน้าตั้งค่าของหมวด (`NumberingController::MODULES`: โปรแกรมตั้งค่า → เอกสาร, สิทธิ์แก้ของหน้านั้นแก้เลขของหมวดนั้นได้; ผลิตมีหน้า `/settings/production` ที่มีแค่ตารางนี้) เอกสารใหม่ต้องใส่ใน MODULES ด้วย |
 | `System\AttachmentController` | เอกสารแนบ (`att_det`, `System\Attachment`) ทุกเอกสารผ่าน route ชุดเดียว `/api/files/{doc}/{nbr}` (`DOCS` = รหัส → [โปรแกรม, ตาราง, คีย์]; JE `type~ref~date`, BR `bank~date`, WR `PND53~YYYY-MM`) สิทธิ์ตามหน้าจอของเอกสาร (ดู / เพิ่มหรือแก้ = แนบ / แก้หรือลบ = ลบไฟล์) — หน้าจอใส่ `View::partial('partials/files', ['doc' => 'AP', 'nbr' => $ref])` (`Phai.files` โหลดเองเมื่อมี/เปลี่ยน `data-nbr`, ว่าง = ซ่อน, `data-title` ต่อท้ายหัวข้อ) doc/edit ใส่ `$config['files'] = 'PO'`, doc/list `'files' => 'PO'` / `Phai.grid({files: {doc, key}})` = ปุ่มคลิปหน้าสุดของไอคอนท้ายแถว เปิด dialog ดู/แนบ/ลบ (สีเขียว + ตัวเลข = จำนวนไฟล์ จาก `Phai.files.mark()`), ตารางที่ทำเองใช้ `Phai.files.button(doc, nbr, title, n)` + `mark(root)`, Resource `$files = 'VD'` (กล่องท้าย dialog + คลิป + ลบไฟล์เมื่อลบรายการ) — ลบเอกสารให้เรียก `Attachment::removeAll()`; เพิ่มเอกสารใหม่ใส่ใน `DOCS` + `lang/*/files.php` (`hint_<รหัส>` สิ่งที่ควรแนบ) เงินสดย่อย (`PC`) ใช้ route กลาง แต่แนบ/ลบได้เฉพาะผู้ถือในเดือนที่ยังไม่นับ (`PettyCash::fileable()`) |
 | `Pdf` | route ที่ลงท้าย `/print` ตอบเป็นไฟล์ PDF เมื่อมี `?pdf=1` — ใช้ Edge/Chrome แบบ headless บนเครื่อง (ไม่มีก็คืนหน้าพิมพ์ปกติ) |
+| `PdfKit\Reader` / `Writer` | อ่านและเขียน PDF ด้วย PHP ล้วน (xref table/stream, object stream, Flate + PNG predictor, ซ่อม xref ที่เสีย, ไม่รับไฟล์เข้ารหัส): `pages()` (box/rotate/width/height ตามที่แสดง), `content()`, `fingerprint()` (ลายนิ้วมือรายหน้า ไม่ขึ้นกับการจัดไฟล์); `Writer::addPage($r, $page, ['flatten', 'pre', 'ops', 'xobjects'])` คัดลอกหน้า (ไม่เอา JavaScript ลิงก์ ฟอร์ม outline), `form()` ทำหน้าเป็น form XObject, `place()` วาง overlay ที่ browser วาดลงบนหน้า, `shrink()` ย่อเนื้อหาเดิม — ใช้แทน qpdf เพราะ Phai Server/Windows ไม่ต้องมีเครื่องมือเพิ่ม เทสต์ `tests/PdfKitTest.php` |
+| `Qr` | QR code เป็น SVG (byte mode, ระดับ M, รุ่น 1–10) `Qr::svg($text)` |
 
 ### เพิ่มหน้าจอข้อมูลหลัก (ดูตัวอย่างที่ `src/Modules/Master/*Resource.php`)
 
@@ -96,7 +98,7 @@ ERP โอเพนซอร์ส PHP ล้วน สำหรับบริ�
 ## ฐานข้อมูล
 
 ```
-database/schema/phaierp_schema.sql   โครงสร้างอย่างเดียว (119 ตาราง)
+database/schema/phaierp_schema.sql   โครงสร้างอย่างเดียว (125 ตาราง)
 database/seeds/10_geography.sql      ประเทศ จังหวัด อำเภอ ตำบล
 database/seeds/20_reference.sql      สกุลเงิน หน่วยนับ ภาษี เงื่อนไขชำระ ผังบัญชี กลุ่มสินค้า สายผลิตภัณฑ์
 database/seeds/30_system.sql         ข้อมูลบริษัท ตาราง _ctrl ทุกตัว บทบาท ADMIN คลัง MAIN / ตำแหน่ง STOCK สถานะสินค้า
@@ -202,6 +204,19 @@ database/seeds/40_menu.sql           เมนูหลัก (ภาษาไ�
 - งานบริการ (ม.78/1): ใบแจ้งหนี้ที่ทำเองตั้ง `ih_vat_on_rcpt` = 1 → ภาษีลง `gl_vat_defer_acct` (ภาษีขายยังไม่ถึงกำหนด) พิมพ์เป็น "ใบแจ้งหนี้" ไม่มี XML e-Tax; รับชำระแต่ละครั้งย้ายส่วนที่ถึงกำหนด (`CashReceiptController::vatDue()` → `crd_net_amt`/`crd_vat_amt`, งวดสุดท้ายได้ที่เหลือ) Dr defer / Cr ภาษีขาย ใบรับพิมพ์เป็นใบเสร็จรับเงิน/ใบกำกับภาษี และรายงานภาษีขายใช้ใบรับแทนใบแจ้งหนี้
 - ภ.พ.30 (`VatReturnController`, `/vat-return`, `vr_mstr` หนึ่งแถวต่อเดือน): ภาษีขาย − ภาษีซื้อ (จาก `VatReport`) − ชำระเกินยกมา ยื่นแล้ว Dr `gl_vat_out` / Cr `gl_vat_in` / Cr `gl_vat_pay_acct` (หรือ Dr `gl_vat_cr_acct`) ยื่นเรียงเดือน ยกเลิกได้เฉพาะเดือนล่าสุด — งบการเงิน (`FinancialStatementController`, `/financial-statements`) จัดหมวดตามรหัสบัญชี (`SECTIONS`) กำไรปีนี้อยู่ในส่วนของผู้ถือหุ้น
 - บัญชีคุม (`ac_is_control`) ลงสมุดรายวันเองไม่ได้; ปีบัญชี = ปีปฏิทิน กำไรปีก่อนแสดงในกำไรสะสม; ปิดงวดได้เมื่อสิ้นเดือนแล้วและลงค่าเสื่อมของเดือนนั้นครบ
+
+## เอกสารลงนาม (src/Modules/Esign)
+
+แนวทางเต็ม (ภาษาไทย): `docs/e-document-sign.md` ในโปรเจกต์ Phai Server (`D:\Project.NET\alpine-tools`) — ทำแล้วเฉพาะช่วงที่ 1 (คนในองค์กร); คนนอกรอบริการ phai.monrak.net
+
+- ซอง `env_mstr` (เลขชุด ENV ใน `env_ctrl`, `Numbering`): D ร่าง → S กำลังเซ็น → C เสร็จ / X ไม่อนุมัติ / W ถอน — ไฟล์ `envf_det` (M เอกสารหลัก มีช่อง, A แนบท้าย) ผู้ลงนาม `envs_det` (ขั้น `envs_step`, บทบาท S ลงนาม A อนุมัติ C รับทราบ, สถานะ W ยังไม่ถึงคิว R ถึงคิว S X C) ช่อง `envx_det` (pt จากมุมบนซ้ายของหน้าตามที่แสดง, `envx_page` นับรวมทุกเอกสารหลัก, `envx_link` = สำเนาที่เชื่อมกัน) เหตุการณ์ `envh_hist` เป็นโซ่ hash (`EnvelopeLog::add/check`, ปลายโซ่ `env_chain`) — ห้ามแก้หรือลบแถวเหตุการณ์
+- อัปโหลด (`EnvelopeFile::store`) แปลงทุกไฟล์เป็น PDF สะอาดด้วย PdfKit (รูป → A4 ผ่าน `Pdf::fromHtml`) เก็บ `envf_src_hash` (ไฟล์ที่อัปโหลด) และ `envf_hash` (ที่ส่งเซ็น) ไว้ที่ `storage/uploads/<db>/esign` — `EnvelopeFile::list()` ไม่ส่งชื่อไฟล์จริง ใช้ `rows()` ภายใน
+- ลำดับ: `send` → `nextStep()` ให้ขั้นที่น้อยที่สุดที่ยังรอเป็น R (เวลา "รับ" + อีเมล) → เปิดหน้า `/envelopes/{nbr}/sign` ครั้งแรก = "เปิด" (`Envelope::open`) → `sign` (ลายเซ็นที่ตั้งไว้ หรือ PNG ที่วาด, เก็บ `envs_image`, `envs_hash` = ฉบับที่เห็น `seenHash()`) → ขั้นครบเริ่มขั้นถัดไป → หมดแล้ว `finish()`: `EnvelopePdf::build` ทำฉบับสุดท้ายในทรานแซกชันเดียวกัน แล้วส่งอีเมลแนบไฟล์ให้ `recipients()` ทุกคน — อีเมลส่งหลัง commit เสมอ (`deliverMails`) ส่งไม่ได้ก็ไม่ย้อนการเซ็น
+- ใครเห็นอะไร: ผู้ส่ง, ADMIN, ผู้ลงนามเมื่อถึงคิวแล้ว, ผู้รับทราบเมื่อเสร็จ — คนอื่นได้ 404 (กันเดาเลขที่) ไม่มี `#[Program]` บน controller; สร้างซองต้องมีสิทธิ์ add ของโปรแกรม `envelopes` เซ็นไม่ต้องมีสิทธิ์อะไร — เมนู 7.x เข้าได้ทุกคน
+- ฉบับสุดท้าย (`EnvelopePdf`): overlay HTML `views/esign/overlay.php` หนึ่งแผ่น A4 ต่อหน้า (หน้าจริงวาดที่มุมบนซ้ายย่อ k เท่า, ไม่มี JavaScript เพราะ phai-pdf ปิด JS) → `Writer::place()` วางทับหน้าเดิม, เนื้อหาเดิมย่อ `SHRINK` 0.96 เว้นที่ท้ายกระดาษ (เลขซอง หน้า x/รวม ไฟล์ไหนหน้าไหน รหัสเนื้อหา QR) แล้วต่อแนบท้ายและหน้าหลักฐาน `views/esign/evidence.php` (render สองรอบ: นับหน้า แล้วใส่ลายนิ้วมือรายหน้า) — Info มี `/PhaiEnvelope` ให้หน้าตรวจรู้ว่ามาจากซองใด
+- ตรวจ (`EnvelopePdf::verify`): SHA-256 ทั้งไฟล์ = match, ตรงไฟล์ต้นฉบับ = original, อ่านได้และรู้ซอง → เทียบลายนิ้วมือรายหน้า (same-pages / changed + หน้าที่ต่าง) — ใครที่ไม่อยู่ในซองเห็นแค่ว่ามีซองนี้และเสร็จเมื่อไร
+- หน้าจอ: `/envelopes` (รอฉันเซ็น / ที่ฉันส่ง / เอกสารของฉัน), `/envelopes/{nbr}/edit` (ตัวแก้ `js/pages/envelope-edit.js`: วางช่อง ลาก ย่อขยาย เลือกหลายช่อง จัดแนว คัดลอก/ลบหลายหน้า เชื่อมกัน undo/redo คีย์ลัด บันทึกเองทุก 1.2 วินาที), `/envelopes/{nbr}/sign`, `/envelopes/{nbr}`, `/envelopes/verify` — หน้า PDF ใช้ pdf.js (`public/vendor/pdfjs`, `js/esign-pdf.js`) ไฟล์ `.mjs` เปลี่ยนชื่อเป็น `.js` ให้ทุก web server ส่งเป็น JavaScript; ข้อความ `lang/*/esign.php` ส่งเข้าหน้าเป็น JSON (`views/esign/_head.php`) — ตัวแปร view ห้ามชื่อ `data` (View::file ใช้ชื่อนี้เอง) จึงใช้ `payload`
+- ปุ่มซองจดหมายแถบบน = `Envelope::waitingCount()` — เทสต์ `tests/e2e/14-envelopes.php`
 
 ## AI ในตัว (src/Core/Ai)
 

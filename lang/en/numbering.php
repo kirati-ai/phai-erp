@@ -33,6 +33,7 @@ return [
     'WO'  => 'Work order',
     'QC'  => 'Quality check',
     'MI'  => 'Material issue / return',
+    'ENV' => 'Signing envelope',
     'format' => 'Format',
     'format_YM4' => 'Year-month + 4 digits (restarts monthly)',
     'format_yM4' => 'Short year-month + 4 digits (restarts monthly)',

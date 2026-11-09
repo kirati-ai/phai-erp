@@ -2406,3 +2406,137 @@ CREATE TABLE `sig_det` (
   KEY `sig_path` (`sig_path`, `sig_slot`),
   KEY `sig_userid` (`sig_userid`, `sig_status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Signatures on printed documents';
+
+-- ------------------------------------------------------------------ e-Document Sign (Esign\Envelope)
+
+CREATE TABLE `env_ctrl` (
+  `ctrl_id` int(11) NOT NULL DEFAULT 1,
+  `env_prefix` varchar(10) DEFAULT 'ENV' COMMENT 'คำนำหน้าเลขที่ซองเอกสาร',
+  `env_next_nbr` int(11) DEFAULT 1 COMMENT 'เลข Running ซองเอกสาร',
+  `env_format` varchar(10) DEFAULT 'YM4' COMMENT 'รูปแบบเลขที่: N6=PO000001, YM4=PO2026100001 (เริ่มใหม่ทุกเดือน), yM4=PO26100001, Y5=PO202600001 (เริ่มใหม่ทุกปี)',
+  `env_period` varchar(6) DEFAULT NULL COMMENT 'งวดของเลขถัดไป (yyyymm หรือ yyyy) ใช้เริ่มนับใหม่',
+  `created_by` varchar(50) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  `updated_by` varchar(50) DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`ctrl_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='e-Document Sign settings';
+
+CREATE TABLE `env_mstr` (
+  `env_nbr` varchar(20) NOT NULL COMMENT 'เลขที่ซองเอกสาร',
+  `env_title` varchar(255) NOT NULL COMMENT 'ชื่อซอง',
+  `env_note` text DEFAULT NULL COMMENT 'ข้อความถึงผู้ลงนาม',
+  `env_status` char(1) NOT NULL DEFAULT 'D' COMMENT 'D ร่าง, S กำลังเซ็น, C เสร็จ, X ไม่อนุมัติ, W ถอน',
+  `env_step` smallint(6) NOT NULL DEFAULT 0 COMMENT 'ขั้นที่กำลังเซ็น',
+  `env_sent_at` datetime DEFAULT NULL,
+  `env_done_at` datetime DEFAULT NULL COMMENT 'เวลาที่เสร็จ ไม่อนุมัติ หรือถอน',
+  `env_pages` int(11) NOT NULL DEFAULT 0 COMMENT 'จำนวนหน้าของฉบับสุดท้าย',
+  `env_final_file` varchar(64) DEFAULT NULL COMMENT 'ไฟล์ฉบับสุดท้าย (storage/uploads/<db>/esign)',
+  `env_final_hash` char(64) DEFAULT NULL COMMENT 'SHA-256 ของฉบับสุดท้าย',
+  `env_final_size` int(11) DEFAULT NULL,
+  `env_page_hash` mediumtext DEFAULT NULL COMMENT 'ลายนิ้วมือรายหน้าของฉบับสุดท้าย (JSON)',
+  `env_chain` char(64) DEFAULT NULL COMMENT 'hash ของเหตุการณ์ล่าสุด (ปลายโซ่ใน envh_hist)',
+  `created_by` varchar(50) DEFAULT NULL COMMENT 'ผู้ส่ง',
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  `updated_by` varchar(50) DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`env_nbr`),
+  KEY `env_owner` (`created_by`, `env_status`),
+  KEY `env_final_hash` (`env_final_hash`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='e-Document Sign envelopes';
+
+CREATE TABLE `envf_det` (
+  `envf_id` int(11) NOT NULL AUTO_INCREMENT,
+  `envf_nbr` varchar(20) NOT NULL,
+  `envf_seq` smallint(6) NOT NULL DEFAULT 1 COMMENT 'ลำดับในซอง',
+  `envf_kind` char(1) NOT NULL DEFAULT 'M' COMMENT 'M เอกสารหลัก (มีช่องเซ็น), A เอกสารแนบท้าย',
+  `envf_name` varchar(255) NOT NULL COMMENT 'ชื่อไฟล์ที่อัปโหลด',
+  `envf_src_mime` varchar(50) NOT NULL COMMENT 'ชนิดของไฟล์ที่อัปโหลด',
+  `envf_src_hash` char(64) NOT NULL COMMENT 'SHA-256 ของไฟล์ที่อัปโหลด',
+  `envf_src_size` int(11) NOT NULL,
+  `envf_file` varchar(64) NOT NULL COMMENT 'PDF ที่ทำความสะอาดแล้ว (สิ่งที่ส่งเซ็น)',
+  `envf_hash` char(64) NOT NULL COMMENT 'SHA-256 ของ PDF ที่ทำความสะอาดแล้ว',
+  `envf_size` int(11) NOT NULL,
+  `envf_pages` int(11) NOT NULL COMMENT 'จำนวนหน้า',
+  `envf_sizes` text NOT NULL COMMENT 'ขนาดแต่ละหน้า [[กว้าง, สูง], ...] หน่วย pt (JSON)',
+  `created_by` varchar(50) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  `updated_by` varchar(50) DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`envf_id`),
+  KEY `envf_nbr` (`envf_nbr`, `envf_seq`),
+  KEY `envf_hash` (`envf_hash`),
+  KEY `envf_src_hash` (`envf_src_hash`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Files of an envelope';
+
+CREATE TABLE `envs_det` (
+  `envs_id` int(11) NOT NULL AUTO_INCREMENT,
+  `envs_nbr` varchar(20) NOT NULL,
+  `envs_step` smallint(6) NOT NULL DEFAULT 1 COMMENT 'ขั้น: ขั้นถัดไปเริ่มเมื่อขั้นนี้เซ็นครบ',
+  `envs_seq` smallint(6) NOT NULL DEFAULT 1,
+  `envs_role` char(1) NOT NULL DEFAULT 'S' COMMENT 'S ลงนาม, A อนุมัติ, C รับทราบ (ได้ฉบับสุดท้าย)',
+  `envs_kind` char(1) NOT NULL DEFAULT 'U' COMMENT 'U ผู้ใช้ในระบบ, E คนนอก (อีเมล)',
+  `envs_userid` varchar(50) DEFAULT NULL,
+  `envs_name` varchar(150) NOT NULL,
+  `envs_email` varchar(150) DEFAULT NULL,
+  `envs_position` varchar(150) DEFAULT NULL COMMENT 'ตำแหน่ง',
+  `envs_color` varchar(7) DEFAULT NULL COMMENT 'สีของผู้ลงนามในตัวแก้เอกสาร',
+  `envs_status` char(1) NOT NULL DEFAULT 'W' COMMENT 'W ยังไม่ถึงคิว, R ถึงคิวแล้ว, S เซ็นแล้ว, X ไม่อนุมัติ, C ถูกแทนหรือยกเลิก',
+  `envs_recv_at` datetime DEFAULT NULL COMMENT 'รับ',
+  `envs_open_at` datetime DEFAULT NULL COMMENT 'เปิด',
+  `envs_sign_at` datetime DEFAULT NULL COMMENT 'เซ็นหรือไม่อนุมัติ',
+  `envs_ip` varchar(45) DEFAULT NULL,
+  `envs_agent` varchar(255) DEFAULT NULL,
+  `envs_note` varchar(255) DEFAULT NULL COMMENT 'เหตุผลที่ไม่อนุมัติ',
+  `envs_hash` char(64) DEFAULT NULL COMMENT 'ลายนิ้วมือของฉบับที่เห็นตอนเซ็น',
+  `envs_image` mediumtext DEFAULT NULL COMMENT 'ภาพลายเซ็นตอนเซ็น (data URL)',
+  `envs_replaces` int(11) DEFAULT NULL COMMENT 'แทนผู้ลงนาม envs_id',
+  `created_by` varchar(50) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  `updated_by` varchar(50) DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`envs_id`),
+  KEY `envs_nbr` (`envs_nbr`, `envs_step`),
+  KEY `envs_userid` (`envs_userid`, `envs_status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Signers of an envelope, in steps';
+
+CREATE TABLE `envx_det` (
+  `envx_id` int(11) NOT NULL AUTO_INCREMENT,
+  `envx_nbr` varchar(20) NOT NULL,
+  `envx_signer` int(11) DEFAULT NULL COMMENT 'envs_id ของผู้กรอก, ว่าง = สิ่งที่ผู้ส่งใส่เอง',
+  `envx_page` smallint(6) NOT NULL COMMENT 'หน้าในเอกสารหลัก (เริ่ม 1)',
+  `envx_type` varchar(20) NOT NULL COMMENT 'signature, initials, name, position, date, timeline, stamp, text, checkbox, label, mark',
+  `envx_x` decimal(8,2) NOT NULL COMMENT 'จากซ้าย (pt)',
+  `envx_y` decimal(8,2) NOT NULL COMMENT 'จากบน (pt)',
+  `envx_w` decimal(8,2) NOT NULL,
+  `envx_h` decimal(8,2) NOT NULL,
+  `envx_props` text DEFAULT NULL COMMENT 'ข้อความ ขนาดตัวอักษร ตัวหนา จัดแนว สี ต้องกรอก (JSON)',
+  `envx_value` text DEFAULT NULL COMMENT 'ค่าที่ผู้ลงนามกรอก',
+  `envx_link` varchar(20) DEFAULT NULL COMMENT 'ช่องที่คัดลอกแบบเชื่อมกันมีค่าเดียวกัน',
+  `created_by` varchar(50) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  `updated_by` varchar(50) DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`envx_id`),
+  KEY `envx_nbr` (`envx_nbr`, `envx_page`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Fields placed on the pages of an envelope';
+
+CREATE TABLE `envh_hist` (
+  `envh_id` int(11) NOT NULL AUTO_INCREMENT,
+  `envh_nbr` varchar(20) NOT NULL,
+  `envh_at` datetime NOT NULL COMMENT 'เวลาของเซิร์ฟเวอร์',
+  `envh_event` varchar(20) NOT NULL COMMENT 'created, sent, received, opened, signed, declined, reminded, replaced, recalled, completed, delivered',
+  `envh_signer` int(11) DEFAULT NULL COMMENT 'envs_id',
+  `envh_userid` varchar(50) DEFAULT NULL COMMENT 'ผู้ทำ',
+  `envh_ip` varchar(45) DEFAULT NULL,
+  `envh_agent` varchar(255) DEFAULT NULL,
+  `envh_detail` text DEFAULT NULL COMMENT 'รายละเอียด (JSON)',
+  `envh_prev` char(64) NOT NULL COMMENT 'hash ของเหตุการณ์ก่อนหน้า',
+  `envh_hash` char(64) NOT NULL COMMENT 'hash ของเหตุการณ์นี้ รวม envh_prev: แก้แถวใดโซ่ขาด',
+  `created_by` varchar(50) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  `updated_by` varchar(50) DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`envh_id`),
+  KEY `envh_nbr` (`envh_nbr`, `envh_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Events of an envelope, a hash chain';
