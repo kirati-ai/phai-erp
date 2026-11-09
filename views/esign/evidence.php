@@ -67,6 +67,16 @@ tr { break-inside: avoid; }
     <tr class="total"><td></td><td><?= e(t('esign.ev_total')) ?></td><td class="n"><?= $total ?></td><td></td><td></td></tr>
 </table>
 
+<?php
+// outsiders signed at Phai Sign: what they typed, in which style, and that the service confirmed their mail address
+$remote = [];
+foreach ($events as $h) {
+    $d = $h['envh_event'] === 'signed' && $h['envh_detail'] ? (json_decode((string) $h['envh_detail'], true)['remote'] ?? null) : null;
+    if ($d) {
+        $remote[(int) $h['envh_signer']] = $d;
+    }
+}
+?>
 <h2><?= e(t('esign.ev_signers')) ?></h2>
 <table>
     <tr><th class="n"><?= e(t('esign.step')) ?></th><th><?= e(t('esign.signer')) ?></th><th><?= e(t('esign.role')) ?></th><th><?= e(t('esign.t_recv')) ?></th><th><?= e(t('esign.t_open')) ?></th><th><?= e(t('esign.t_sign')) ?></th><th><?= e(t('esign.ev_device')) ?></th></tr>
@@ -74,7 +84,8 @@ tr { break-inside: avoid; }
     <tr>
         <td class="n"><?= (int) $s['envs_step'] ?></td>
         <td><b><?= e($s['envs_name']) ?></b><?php if ($s['envs_position']): ?><br><?= e($s['envs_position']) ?><?php endif ?>
-            <br><span style="color:#555"><?= e($s['envs_kind'] === 'U' ? t('esign.ev_user', ['id' => $s['envs_userid']]) : t('esign.ev_outside')) ?><?= $s['envs_email'] ? ' · ' . e($s['envs_email']) : '' ?></span></td>
+            <br><span style="color:#555"><?= e($s['envs_kind'] === 'U' ? t('esign.ev_user', ['id' => $s['envs_userid']]) : t('esign.ev_outside')) ?><?= $s['envs_email'] ? ' · ' . e($s['envs_email']) : '' ?></span>
+            <?php if (isset($remote[(int) $s['envs_id']])): $rd = $remote[(int) $s['envs_id']]; ?><br><span style="color:#555"><?= e(t('esign.ev_remote', ['typed' => (string) ($rd['typed'] ?? ''), 'font' => (string) ($rd['font'] ?? '')])) ?></span><?php endif ?></td>
         <td><?= e(t('esign.role_' . $s['envs_role'])) ?><br><span style="color:#555"><?= e(t('esign.sstatus_' . $s['envs_status'])) ?></span><?php if ($s['envs_note']): ?><br><?= e($s['envs_note']) ?><?php endif ?></td>
         <td><?= e($when($s['envs_recv_at'])) ?></td>
         <td><?= e($when($s['envs_open_at'])) ?></td>

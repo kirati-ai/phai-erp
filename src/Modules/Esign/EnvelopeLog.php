@@ -17,16 +17,26 @@ final class EnvelopeLog
 {
     public const GENESIS = '0000000000000000000000000000000000000000000000000000000000000000';
 
-    /** Add an event; returns its hash. Call inside the transaction that made the change. */
-    public static function add(string $nbr, string $event, ?int $signer = null, array $detail = []): string
+    /** While set ([] = the machine itself), events without their own $by are not put down to the signed-in user (EnvelopeRemote::sync). */
+    public static ?array $as = null;
+
+    /**
+     * Add an event; returns its hash. Call inside the transaction that made the change. $by is for what did not come
+     * from the person at this page: an outsider through Phai Sign ({ip, agent} as the service saw them) or the
+     * machine itself ([]), so neither is put down to whoever happened to load the page that pulled it in.
+     */
+    public static function add(string $nbr, string $event, ?int $signer = null, array $detail = [], ?array $by = null): string
     {
+        $by ??= self::$as;
         $db = App::db();
         $prev = (string) ($db->value('SELECT env_chain FROM env_mstr WHERE env_nbr = ? FOR UPDATE', [$nbr]) ?? '');
         $prev = $prev !== '' ? $prev : self::GENESIS;
         $req = Request::current();
         $row = [
             'envh_nbr' => $nbr, 'envh_at' => date('Y-m-d H:i:s'), 'envh_event' => $event, 'envh_signer' => $signer,
-            'envh_userid' => Auth::userId(), 'envh_ip' => $req?->ip, 'envh_agent' => self::agent(),
+            'envh_userid' => $by === null ? Auth::userId() : null,
+            'envh_ip' => $by === null ? $req?->ip : (isset($by['ip']) ? mb_substr((string) $by['ip'], 0, 45) : null),
+            'envh_agent' => $by === null ? self::agent() : (isset($by['agent']) ? mb_substr((string) $by['agent'], 0, 255) : null),
             'envh_detail' => $detail ? json_encode($detail, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null,
             'envh_prev' => $prev,
         ];

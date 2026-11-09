@@ -145,7 +145,7 @@ New screens: **Purchase returns** (from a goods receipt; deducted on the vendor 
 
 The final document has a footer on every page (envelope number, page x / total, which file and page, a QR code) and the **evidence of signing** pages: every file's page count, SHA-256 fingerprints of each file and each page, the signers with the times they received, opened and signed, and the full history kept as a hash chain. **Check a document** says whether a file matches what was signed and, if not, which pages differ.
 
-People outside the company cannot be sent to yet (that waits for the phai.monrak.net service). All times are the server's clock.
+People outside the company sign through the Phai Sign service (phai.monrak.net) once an administrator turns it on under **Outside signers**: they get a mail, confirm a 6-digit code and sign with their typed name in a handwriting style; the result comes back to the envelope by itself. All times are the server's clock.
 
 ## Users and security
 

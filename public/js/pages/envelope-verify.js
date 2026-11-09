@@ -21,6 +21,7 @@
             <div class="d-flex align-items-center gap-2 mb-2"><span class="badge bg-secondary-lt">${esc(s.nbr)}</span><b>${esc(s.title)}</b></div>
             <div class="small mb-2">${esc(T['estatus_' + s.status])}${s.done ? ' · ' + esc(s.done) : ''}${s.pages ? ' · ' + esc(tr(T.n_pages, { n: s.pages })) : ''}</div>
             ${s.sha256 ? `<div class="es-hash mb-2">SHA-256 ${esc(s.sha256)}</div>` : ''}
+            ${s.witness ? `<div class="small text-success mb-2"><i class="ti ti-certificate me-1"></i>${esc(tr(T.witness_at, s.witness))}</div>` : ''}
             <table class="table table-sm mb-0">${s.signers.map((x) => `<tr><td>${esc(x.name)}${x.position ? ` <span class="text-secondary small">${esc(x.position)}</span>` : ''}</td>
                 <td><span class="badge bg-${scolor[x.status]}-lt">${esc(T['sstatus_' + x.status])}</span></td><td class="small">${esc(x.signed)}</td></tr>`).join('')}</table>
         </div></div>`;

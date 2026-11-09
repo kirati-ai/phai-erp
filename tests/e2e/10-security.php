@@ -20,11 +20,13 @@ $open = ['/api/geo/provinces', '/api/geo/districts/{pv_id}', '/api/geo/subdistri
     '/signatures', '/signatures/{id}', '/api/signatures', '/api/signatures/people', '/api/signatures/sign', '/api/signatures/request',
     '/api/signatures/reject', '/api/signatures/withdraw', '/api/me/sign',
     // envelopes: anyone may be asked to sign; an envelope shows only to those in it (404 otherwise), making one needs
-    // the add right on "envelopes", and the check page answers anyone signed in (14-envelopes)
+    // the add right on "envelopes", and the check page answers anyone signed in (14-envelopes); asking Phai Sign for
+    // results is open to anyone signed in but runs at most every 30 s for them (the settings are ADMIN only, 15-outsiders)
     '/envelopes', '/envelopes/verify', '/envelopes/{nbr}', '/envelopes/{nbr}/edit', '/envelopes/{nbr}/sign', '/envelopes/{nbr}/files/{id}',
     '/envelopes/{nbr}/final', '/api/envelopes', '/api/envelopes/people', '/api/envelopes/verify', '/api/envelopes/{nbr}',
     '/api/envelopes/{nbr}/files', '/api/envelopes/{nbr}/files/{id}', '/api/envelopes/{nbr}/send', '/api/envelopes/{nbr}/sign',
-    '/api/envelopes/{nbr}/decline', '/api/envelopes/{nbr}/recall', '/api/envelopes/{nbr}/remind', '/api/envelopes/{nbr}/replace'];
+    '/api/envelopes/{nbr}/decline', '/api/envelopes/{nbr}/recall', '/api/envelopes/{nbr}/remind', '/api/envelopes/{nbr}/replace',
+    '/api/envelopes/sync'];
 
 $a = login('admin', $pw);
 $a->req('POST', '/api/roles', ['role_code' => 'NOPERM', 'role_desc' => 'No rights']);

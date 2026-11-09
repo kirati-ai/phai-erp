@@ -26,8 +26,8 @@ use Phai\Modules\System\SignImage;
  * Who sees an envelope: its sender, a signer once their turn has come (C-role readers once it is completed), and ADMIN.
  * Sending needs the add right on "envelopes"; signing needs only to be the person asked.
  *
- * People outside the company (kind E) are in the data but cannot be sent to yet: that goes through phai.monrak.net
- * (docs/e-document-sign.md in Phai Server, phase 2).
+ * People outside the company (kind E) sign through the Phai Sign service (EnvelopeRemote): their step is sent there,
+ * they get its mail instead of ours, and their signature comes back with the service's times (remoteSigned).
  */
 final class Envelope
 {
@@ -402,9 +402,13 @@ final class Envelope
                 $p[] = t('esign.need_sign_field', ['name' => $s['envs_name']]);
             }
         }
-        foreach ($signers as $s) {
-            if ($s['envs_kind'] === 'E') {
-                $p[] = t('esign.outside_not_yet', ['name' => $s['envs_name']]);
+        $outside = array_filter($signers, fn ($s) => $s['envs_kind'] === 'E');
+        if ($outside && !EnvelopeRemote::ready()) {
+            $p[] = t('esign.outside_need_service', ['name' => implode(', ', array_column($outside, 'envs_name'))]);
+        }
+        foreach ($outside as $s) {
+            if (array_filter($fields, fn ($f) => $f['envx_signer'] === (int) $s['envs_id'] && $f['envx_type'] === 'stamp')) {
+                $p[] = t('esign.outside_no_stamp', ['name' => $s['envs_name']]);
             }
         }
         foreach ($fields as $f) {
@@ -432,6 +436,7 @@ final class Envelope
             return self::nextStep($nbr);
         });
         self::deliverMails($mails);
+        EnvelopeRemote::after($nbr);
         return self::load($nbr);
     }
 
@@ -515,7 +520,83 @@ final class Envelope
             return self::nextStep($nbr);
         });
         self::deliverMails($mails);
+        EnvelopeRemote::after($nbr);
         return self::load($nbr);
+    }
+
+    /**
+     * An outsider signed at Phai Sign ($req as EnvelopeRemote pulled it): their fields, the PNG of their typed name,
+     * and the service's times, IP and browser. Checked the same way as a signature made here.
+     */
+    public static function remoteSigned(string $nbr, array $s, array $req): void
+    {
+        $res = (array) ($req['result'] ?? []);
+        $image = self::checkImage((string) ($res['image'] ?? ''));
+        $values = (array) ($res['values'] ?? []);
+        $save = [];
+        foreach (self::fields($nbr) as $f) {
+            if ($f['envx_signer'] !== (int) $s['envs_id']) {
+                continue;
+            }
+            $v = $values[$f['envx_id']] ?? $values[(string) $f['envx_id']] ?? null;
+            if ($f['envx_type'] === 'text') {
+                $save[(int) $f['envx_id']] = mb_substr(trim((string) $v), 0, 500);
+            } elseif ($f['envx_type'] === 'checkbox') {
+                $save[(int) $f['envx_id']] = !empty($v) && $v !== '0' ? '1' : '0';
+            }
+        }
+        $at = fn ($ts) => $ts ? date('Y-m-d H:i:s', (int) $ts) : null;
+        $by = ['ip' => $req['ip'] ?? null, 'agent' => $req['agent'] ?? null];
+        $mails = App::db()->transaction(function () use ($nbr, $s, $req, $res, $save, $image, $at, $by) {
+            $db = App::db();
+            $locked = $db->one('SELECT envs_status FROM envs_det WHERE envs_id = ? FOR UPDATE', [$s['envs_id']]);
+            if (($locked['envs_status'] ?? '') !== 'R') {
+                return [];
+            }
+            foreach ($save as $id => $v) {
+                $db->update('envx_det', ['envx_value' => $v], ['envx_id' => $id]);
+            }
+            $seen = self::seenHash($nbr);
+            $db->run(
+                "UPDATE envs_det SET envs_status = 'S', envs_open_at = COALESCE(envs_open_at, ?), envs_sign_at = ?, envs_ip = ?, envs_agent = ?,
+                        envs_hash = ?, envs_image = ?, envs_ext_state = 'S' WHERE envs_id = ?",
+                [$at($req['open_ts'] ?? null), $at($req['sign_ts'] ?? null) ?? date('Y-m-d H:i:s'), $by['ip'], $by['agent'] ? mb_substr((string) $by['agent'], 0, 255) : null, $seen, $image, $s['envs_id']]
+            );
+            EnvelopeLog::add($nbr, 'signed', (int) $s['envs_id'], [
+                'seen' => $seen, 'role' => $s['envs_role'],
+                'remote' => [
+                    'id' => $req['id'], 'at' => $at($req['sign_ts'] ?? null), 'typed' => $res['typed'] ?? null, 'font' => $res['font'] ?? null,
+                    'consent' => $res['consent'] ?? null, 'seen' => $req['seen'] ?? null, 'chain' => $req['chain'] ?? null, 'intact' => $req['intact'] ?? null,
+                ],
+            ], $by);
+            return self::nextStep($nbr);
+        });
+        self::deliverMails($mails);
+    }
+
+    /** An outsider declined at Phai Sign: the envelope stops, as when someone here declines. */
+    public static function remoteDeclined(string $nbr, array $s, array $req): void
+    {
+        $note = trim(mb_substr((string) ($req['reason'] ?? ''), 0, 255)) ?: '-';
+        $now = isset($req['sign_ts']) ? date('Y-m-d H:i:s', (int) $req['sign_ts']) : date('Y-m-d H:i:s');
+        $by = ['ip' => $req['ip'] ?? null, 'agent' => $req['agent'] ?? null];
+        $done = App::db()->transaction(function () use ($nbr, $s, $note, $now, $by, $req) {
+            $db = App::db();
+            $locked = $db->one('SELECT envs_status FROM envs_det WHERE envs_id = ? FOR UPDATE', [$s['envs_id']]);
+            if (($locked['envs_status'] ?? '') !== 'R') {
+                return false;
+            }
+            $db->update('envs_det', ['envs_status' => 'X', 'envs_sign_at' => $now, 'envs_note' => $note, 'envs_ip' => $by['ip'],
+                'envs_agent' => $by['agent'] ? mb_substr((string) $by['agent'], 0, 255) : null, 'envs_ext_state' => 'X'], ['envs_id' => $s['envs_id']]);
+            $db->update('env_mstr', ['env_status' => 'X', 'env_done_at' => $now], ['env_nbr' => $nbr]);
+            EnvelopeLog::add($nbr, 'declined', (int) $s['envs_id'], ['reason' => $note, 'remote' => ['id' => $req['id'], 'chain' => $req['chain'] ?? null]], $by);
+            return true;
+        });
+        if ($done) {
+            $env = self::row($nbr);
+            self::tellReached($env, t('esign.mail_declined_subject', ['title' => $env['env_title']]),
+                t('esign.mail_declined_body', ['name' => $s['envs_name'], 'title' => $env['env_title'], 'nbr' => $nbr, 'reason' => $note]));
+        }
     }
 
     /** Turn the envelope down, with the reason: it stops, and the sender and everyone reached so far are told. */
@@ -538,6 +619,7 @@ final class Envelope
         $env = self::row($nbr);
         self::tellReached($env, t('esign.mail_declined_subject', ['title' => $env['env_title']]),
             t('esign.mail_declined_body', ['name' => $me['envs_name'], 'title' => $env['env_title'], 'nbr' => $nbr, 'reason' => $note]));
+        EnvelopeRemote::after($nbr);
         return self::load($nbr);
     }
 
@@ -551,23 +633,33 @@ final class Envelope
             EnvelopeLog::add($nbr, 'recalled');
         });
         self::tellReached($env, t('esign.mail_recalled_subject', ['title' => $env['env_title']]), t('esign.mail_recalled_body', ['title' => $env['env_title'], 'nbr' => $nbr]));
+        EnvelopeRemote::after($nbr);
         return self::load($nbr);
     }
 
-    /** Mail the people whose turn it is again. */
+    /** Mail the people whose turn it is again; outsiders get a new link from Phai Sign (the old one stops working). */
     public static function remind(string $nbr): array
     {
         $env = self::managed($nbr);
         $mails = [];
         $sent = [];
+        $remote = 0;
         foreach (self::signers($nbr) as $s) {
-            if ($s['envs_status'] === 'R') {
-                $mails[] = self::turnMail($env, $s, true);
-                $sent[] = $s['envs_name'];
+            if ($s['envs_status'] !== 'R') {
+                continue;
             }
+            if ($s['envs_kind'] === 'E') {
+                if (EnvelopeRemote::remind($s)) {
+                    $remote++;
+                    $sent[] = $s['envs_name'];
+                }
+                continue;
+            }
+            $mails[] = self::turnMail($env, $s, true);
+            $sent[] = $s['envs_name'];
         }
         App::db()->transaction(fn () => EnvelopeLog::add($nbr, 'reminded', null, ['to' => $sent]));
-        return self::load($nbr) + ['mailed' => self::deliverMails($mails)];
+        return self::load($nbr) + ['mailed' => self::deliverMails($mails) + $remote];
     }
 
     /** Put another user in place of a signer who has not signed yet (on leave, left the company). */
@@ -599,6 +691,9 @@ final class Envelope
             return [];
         });
         self::deliverMails($mails);
+        if ($old['envs_ext'] !== null) {
+            EnvelopeRemote::close($old['envs_ext'], (int) $old['envs_id']);
+        }
         return self::load($nbr);
     }
 
@@ -628,8 +723,9 @@ final class Envelope
             }
             $db->update('envs_det', ['envs_status' => 'R', 'envs_recv_at' => $now], ['envs_id' => $s['envs_id']]);
             $s['envs_status'] = 'R';
-            $mail = self::turnMail($env, $s);
-            EnvelopeLog::add($nbr, 'received', (int) $s['envs_id'], ['step' => $step, 'mail' => $mail !== null]);
+            // an outsider's mail comes from Phai Sign, with a link that works outside the office (EnvelopeRemote::push)
+            $mail = $s['envs_kind'] === 'E' ? null : self::turnMail($env, $s);
+            EnvelopeLog::add($nbr, 'received', (int) $s['envs_id'], ['step' => $step, 'mail' => $mail !== null, 'remote' => $s['envs_kind'] === 'E']);
             $mails[] = $mail;
         }
         return $mails;
@@ -650,9 +746,11 @@ final class Envelope
         EnvelopeLog::add($nbr, 'completed', null, ['sha256' => $hash, 'pages' => $built['pages']]);
         $mails = [];
         $to = [];
+        // outsiders get the final document from Phai Sign (EnvelopeRemote::finished), as a link that works for them
+        $outside = array_map('strtolower', array_column(array_filter(self::signers($nbr), fn ($s) => $s['envs_kind'] === 'E'), 'envs_email'));
         foreach (self::recipients($nbr) as $r) {
             $to[] = $r['name'];
-            if ($r['email']) {
+            if ($r['email'] && !in_array(strtolower($r['email']), $outside, true)) {
                 $mails[] = [
                     'to' => $r['email'], 'subject' => t('esign.mail_done_subject', ['title' => $env['env_title']]),
                     'body' => t('esign.mail_done_body', ['title' => $env['env_title'], 'nbr' => $nbr, 'pages' => $built['pages'], 'hash' => $hash]),
@@ -783,7 +881,9 @@ final class Envelope
         $mails = [];
         $seen = [];
         $owner = App::db()->value('SELECT us_email FROM us_mstr WHERE us_userid = ?', [$env['created_by']]);
-        foreach (array_merge([$owner], array_column(array_filter(self::signers($env['env_nbr']), fn ($s) => $s['envs_recv_at'] !== null), 'envs_email')) as $to) {
+        // outsiders hear from Phai Sign (a withdrawn request is mailed there); our links would not open for them
+        $reached = array_filter(self::signers($env['env_nbr']), fn ($s) => $s['envs_recv_at'] !== null && $s['envs_kind'] !== 'E');
+        foreach (array_merge([$owner], array_column($reached, 'envs_email')) as $to) {
             if ($to && !isset($seen[strtolower($to)])) {
                 $seen[strtolower($to)] = true;
                 $mails[] = ['to' => $to, 'subject' => $subject, 'body' => $body, 'link' => "/envelopes/{$env['env_nbr']}"];

@@ -43,6 +43,7 @@ final class EnvelopeController
     #[Get('/envelopes/{nbr}')]
     public function show(string $nbr): Response|string
     {
+        EnvelopeRemote::maybeSync();
         $data = Envelope::load($nbr);
         if ($data['can']['edit']) {
             return Response::redirect(url("/envelopes/$nbr/edit"));
@@ -93,7 +94,50 @@ final class EnvelopeController
     #[Get('/api/envelopes')]
     public function lists(): array
     {
-        return Envelope::lists();
+        EnvelopeRemote::maybeSync();
+        return Envelope::lists() + ['admin' => Auth::isAdmin(), 'remote' => EnvelopeRemote::ready()];
+    }
+
+    // ------------------------------------------------------------------ Phai Sign (outsiders), ADMIN
+
+    #[Get('/api/envelopes/remote')]
+    public function remote(): array
+    {
+        if (!Auth::isAdmin()) {
+            throw new HttpException(403, t('auth.forbidden'));
+        }
+        return EnvelopeRemote::view();
+    }
+
+    /** Body {on, url, days, witness}. */
+    #[Put('/api/envelopes/remote')]
+    public function remoteSave(Request $request): array
+    {
+        return EnvelopeRemote::save($request->body);
+    }
+
+    /** Body {url, name, contact, code}: register this machine with the service. */
+    #[Post('/api/envelopes/remote/register')]
+    public function remoteRegister(Request $request): array
+    {
+        return EnvelopeRemote::register($request->body);
+    }
+
+    #[Post('/api/envelopes/remote/ping')]
+    public function remotePing(): array
+    {
+        return EnvelopeRemote::ping();
+    }
+
+    /** Ask Phai Sign for results now (ADMIN); for anyone else, only if it was not asked in the last half minute. */
+    #[Post('/api/envelopes/sync')]
+    public function sync(): array
+    {
+        if (Auth::isAdmin()) {
+            return EnvelopeRemote::sync();
+        }
+        EnvelopeRemote::maybeSync();
+        return [];
     }
 
     #[Get('/api/envelopes/people')]
@@ -125,6 +169,7 @@ final class EnvelopeController
     #[Get('/api/envelopes/{nbr}')]
     public function get(string $nbr): array
     {
+        EnvelopeRemote::maybeSync();
         return $this->out(Envelope::load($nbr), true);
     }
 
@@ -224,6 +269,7 @@ final class EnvelopeController
         $data['pages'] = Envelope::mainPages($nbr);
         $data['done'] = Envelope::when($data['env']['env_done_at']);
         $data['sent'] = Envelope::when($data['env']['env_sent_at']);
+        $data['witness'] = Envelope::when($data['env']['env_witness_at'] ?? null);
         return $data;
     }
 
@@ -240,6 +286,7 @@ final class EnvelopeController
         return [
             'nbr' => $e['env_nbr'], 'title' => $e['env_title'], 'status' => $e['env_status'], 'done' => Envelope::when($e['env_done_at']),
             'pages' => (int) $e['env_pages'], 'sha256' => $e['env_final_hash'], 'full' => true,
+            'witness' => $e['env_witness_id'] ? ['at' => Envelope::when($e['env_witness_at']), 'id' => $e['env_witness_id']] : null,
             'signers' => array_map(fn ($s) => ['name' => $s['envs_name'], 'position' => $s['envs_position'], 'status' => $s['envs_status'], 'signed' => Envelope::when($s['envs_sign_at'])],
                 array_values(array_filter($d['signers'], fn ($s) => $s['envs_role'] !== 'C' && $s['envs_status'] !== 'C'))),
         ];

@@ -84,11 +84,20 @@ try {
             echo "Password changed. You can sign in as $userid now.\n";
             break;
 
+        case 'esign-sync':
+            // outside signers: push their steps to Phai Sign and pull results back (Phai Server runs this on a timer)
+            if (!App::installed()) {
+                throw new RuntimeException('Not installed yet.');
+            }
+            echo json_encode(\Phai\Modules\Esign\EnvelopeRemote::sync()), "\n";
+            break;
+
         default:
             echo "PhaiERP ", App::VERSION, "\n\n",
                 "  php bin/phai version              show the version\n",
                 "  php bin/phai install <setup.json> install without the web wizard (see Phai Server)\n",
                 "  php bin/phai password <user>      set a new password for a user (forgotten password)\n",
+                "  php bin/phai esign-sync           send outside signers to Phai Sign and pull their results back\n",
                 "  php bin/phai demo                 load sample data into an empty system (it stays: install again to start without it)\n";
     }
 } catch (Throwable $e) {
