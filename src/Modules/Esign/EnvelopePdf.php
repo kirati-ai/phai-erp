@@ -91,6 +91,58 @@ final class EnvelopePdf
         return ['bytes' => $bytes, 'pages' => $total, 'fingerprints' => $all, 'at' => $at];
     }
 
+    /**
+     * The main documents as an outsider is shown them at Phai Sign: what the sender put on and what signers before
+     * them filled in, stamped on; no footer, nothing shrunk, so their own fields (sent beside it) sit where the
+     * sender placed them. Fields of people who have not signed yet stay off.
+     */
+    public static function snapshot(string $nbr, int $forSigner): string
+    {
+        $parts = [];
+        foreach (EnvelopeFile::rows($nbr) as $f) {
+            if ($f['envf_kind'] !== 'M') {
+                continue;
+            }
+            $r = new Reader(EnvelopeFile::bytes($f));
+            foreach ($r->pages() as $p) {
+                $parts[] = ['r' => $r, 'p' => $p];
+            }
+        }
+        $signers = array_column(Envelope::signers($nbr), null, 'envs_id');
+        $byPage = [];
+        foreach (Envelope::fields($nbr) as $x) {
+            $s = $x['envx_signer'] !== null ? ($signers[$x['envx_signer']] ?? null) : null;
+            if ($x['envx_signer'] === $forSigner || ($x['envx_signer'] !== null && ($s['envs_status'] ?? '') !== 'S')) {
+                continue;
+            }
+            $byPage[(int) $x['envx_page']][] = self::fieldOut($x, $signers);
+        }
+        $w = new Writer();
+        if (!$byPage) {
+            foreach ($parts as $part) {
+                $w->addPage($part['r'], $part['p'], ['flatten' => false]);
+            }
+            return $w->output([], $nbr . 'snapshot');
+        }
+        if (!Pdf::available()) {
+            throw new HttpException(500, t('esign.no_pdf_engine'));
+        }
+        $sheets = [];
+        foreach ($parts as $i => $part) {
+            $sheets[] = ['w' => $part['p']['width'], 'h' => $part['p']['height'], 'k' => self::scale($part['p']), 'shrink' => 1.0, 'fields' => $byPage[$i + 1] ?? [], 'foot' => null];
+        }
+        $overlay = new Reader(Pdf::fromHtml(View::partial('esign/overlay', ['sheets' => $sheets, 'nbr' => $nbr, 'total' => count($sheets), 'code' => '', 'qr' => ''])));
+        if (count($overlay->pages()) !== count($parts)) {
+            throw new \RuntimeException('Overlay pages do not match the document');
+        }
+        foreach ($parts as $i => $part) {
+            $o = $overlay->pages()[$i];
+            $form = $w->form($overlay, $o);
+            $w->addPage($part['r'], $part['p'], ['flatten' => false, 'ops' => Writer::place($part['p'], $o, self::scale($part['p']), 'PhaiOv'), 'xobjects' => ['PhaiOv' => $form]]);
+        }
+        return $w->output([], $nbr . 'snapshot');
+    }
+
     private static function addDocumentPages(Writer $w, array $parts, Reader $overlay): void
     {
         foreach ($parts as $i => $part) {

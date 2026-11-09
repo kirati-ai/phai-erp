@@ -18,6 +18,14 @@
     const scolor = { W: 'secondary', R: 'orange', S: 'green', X: 'red', C: 'secondary' };
     let people = null;
 
+    /** Where an outsider's turn stands at Phai Sign: not sent yet, sent, link expired or locked, or why sending failed. */
+    function outside(s) {
+        if (s.envs_kind !== 'E' || s.envs_status !== 'R') return '';
+        const text = s.envs_ext_err ? tr(T.ext_err, { error: s.envs_ext_err }) : !s.envs_ext ? T.ext_wait : T['ext_' + (s.envs_ext_state || 'R')] || T.ext_R;
+        const warn = s.envs_ext_err || ['E', 'L'].includes(s.envs_ext_state);
+        return `<div class="small ${warn ? 'text-danger' : 'text-secondary'}"><i class="ti ti-world-share me-1"></i>${esc(text)}</div>`;
+    }
+
     function render() {
         const e = D.env;
         $('es-nbr').textContent = nbr;
@@ -36,9 +44,9 @@
 
         $('es-signers').innerHTML = D.signers.map((s) => `<tr${s.envs_status === 'C' ? ' class="text-secondary"' : ''}>
             <td>${s.envs_role === 'C' ? '' : s.envs_step}</td>
-            <td><b>${esc(s.envs_name)}</b>${s.envs_position ? `<div class="small text-secondary">${esc(s.envs_position)}</div>` : ''}</td>
+            <td><b>${esc(s.envs_name)}</b>${s.envs_kind === 'E' ? ` <span class="badge bg-azure-lt">${esc(T.ev_outside)}</span><div class="small text-secondary">${esc(s.envs_email || '')}</div>` : ''}${s.envs_position ? `<div class="small text-secondary">${esc(s.envs_position)}</div>` : ''}</td>
             <td>${esc(T['role_' + s.envs_role])}</td>
-            <td><span class="badge bg-${scolor[s.envs_status]}-lt">${esc(T['sstatus_' + s.envs_status])}</span>${s.envs_note ? `<div class="small">${esc(s.envs_note)}</div>` : ''}</td>
+            <td><span class="badge bg-${scolor[s.envs_status]}-lt">${esc(T['sstatus_' + s.envs_status])}</span>${s.envs_note ? `<div class="small">${esc(s.envs_note)}</div>` : ''}${outside(s)}</td>
             <td class="small">${esc(s.times || '')}</td>
             <td class="text-end">${D.can.manage && ['W', 'R'].includes(s.envs_status) && s.envs_role !== 'C'
                 ? `<button type="button" class="btn btn-sm btn-ghost-secondary" data-replace="${s.envs_id}" title="${esc(T.replace)}"><i class="ti ti-user-share"></i></button>` : ''}</td>
@@ -50,6 +58,7 @@
             <span class="small text-secondary text-nowrap">${esc(f.envf_kind === 'M' ? T.kind_M : tr(T.kind_A_n, { k: ++k }))} · ${f.envf_pages} ${esc(T.pages_short)}</span></div>`).join('');
         $('es-hash').innerHTML = e.env_final_hash
             ? `${esc(tr(T.final_summary, { pages: e.env_pages, at: D.done }))}<div class="es-hash mt-1">SHA-256 ${esc(e.env_final_hash)}</div>
+               ${e.env_witness_id ? `<div class="small text-success mt-1"><i class="ti ti-certificate me-1"></i>${esc(tr(T.witness_at, { at: D.witness, id: e.env_witness_id }))}</div>` : ''}
                <a class="small" href="${esc(base + '/envelopes/verify?n=' + nbr)}"><i class="ti ti-shield-check me-1"></i>${esc(T.verify)}</a>` : '';
 
         $('es-chain').innerHTML = D.chainBroken === null

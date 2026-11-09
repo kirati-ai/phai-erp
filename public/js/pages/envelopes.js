@@ -21,6 +21,7 @@
     Phai.api.get('/api/envelopes').then((d) => {
         const add = document.getElementById('es-new');
         add.hidden = !d.canSend;
+        document.getElementById('es-remote').hidden = !d.admin;
         fill('es-waiting', d.waiting, (r) => `<tr>
             <td>${link(`/envelopes/${r.env_nbr}/sign`, r.env_nbr)}</td><td>${link(`/envelopes/${r.env_nbr}/sign`, r.env_title)}</td>
             <td>${esc(r.sender || '')}</td><td>${esc(T['role_' + r.envs_role])}</td>
@@ -37,6 +38,67 @@
             const tab = document.querySelector(`a[href="#${d.sent.length ? 'es-sent' : 'es-done'}"]`);
             const bs = window.bootstrap || window.tabler;
             if (tab && bs?.Tab) bs.Tab.getOrCreateInstance(tab).show();
+        }
+    });
+
+    // ---------------------------------------------------------------- Phai Sign (outside signers), ADMIN
+    const $ = (id) => document.getElementById(id);
+    const tr = (s, p = {}) => Object.entries(p).reduce((a, [k, v]) => a.replace(':' + k, v), s || '');
+    let modal = null;
+
+    function showRemote(r) {
+        $('es-rm-state').className = 'alert py-2 small ' + (r.registered ? (r.on ? 'alert-success' : 'alert-secondary') : 'alert-warning');
+        $('es-rm-state').textContent = r.registered ? tr(T.remote_registered, { name: r.name || '', id: r.server || '' }) + (r.on ? '' : ' · ' + T.remote_not_ready) : T.remote_not_registered;
+        $('es-rm-register').hidden = r.registered;
+        $('es-rm-settings').hidden = !r.registered;
+        $('es-rm-foot').hidden = !r.registered;
+        $('es-rm-url1').value = r.url;
+        $('es-rm-name').value ||= r.company;
+        $('es-rm-contact').value ||= r.email;
+        $('es-rm-on').checked = r.on;
+        $('es-rm-url').value = r.url;
+        $('es-rm-days').value = r.days;
+        $('es-rm-witness').checked = r.witness;
+        $('es-rm-last').textContent = r.sync ? tr(T.remote_last, { at: r.sync }) : '';
+    }
+    const fail = (e) => Phai.toast(e.fields ? Object.values(e.fields)[0] : e.message, 'danger');
+
+    $('es-remote').addEventListener('click', async () => {
+        showRemote(await Phai.api.get('/api/envelopes/remote'));
+        const bs = window.bootstrap || window.tabler;
+        modal ??= bs.Modal.getOrCreateInstance($('es-remote-modal'));
+        modal.show();
+    });
+    $('es-rm-do-register').addEventListener('click', async () => {
+        try {
+            showRemote(await Phai.api.post('/api/envelopes/remote/register', { url: $('es-rm-url1').value, name: $('es-rm-name').value, contact: $('es-rm-contact').value, code: $('es-rm-code').value }));
+        } catch (e) {
+            fail(e);
+        }
+    });
+    $('es-rm-save').addEventListener('click', async () => {
+        try {
+            showRemote(await Phai.api.put('/api/envelopes/remote', { on: $('es-rm-on').checked, url: $('es-rm-url').value, days: +$('es-rm-days').value, witness: $('es-rm-witness').checked }));
+            Phai.toast(T.remote_saved, 'success');
+        } catch (e) {
+            fail(e);
+        }
+    });
+    $('es-rm-ping').addEventListener('click', async () => {
+        try {
+            const r = await Phai.api.post('/api/envelopes/remote/ping');
+            Phai.toast(tr(T.remote_ping_ok, { name: r.name }), 'success');
+        } catch (e) {
+            fail(e);
+        }
+    });
+    $('es-rm-sync').addEventListener('click', async () => {
+        try {
+            const r = await Phai.api.post('/api/envelopes/sync');
+            Phai.toast(tr(T.remote_synced, r), 'success');
+            showRemote(await Phai.api.get('/api/envelopes/remote'));
+        } catch (e) {
+            fail(e);
         }
     });
 

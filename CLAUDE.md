@@ -207,7 +207,7 @@ database/seeds/40_menu.sql           เมนูหลัก (ภาษาไ�
 
 ## เอกสารลงนาม (src/Modules/Esign)
 
-แนวทางเต็ม (ภาษาไทย): `docs/e-document-sign.md` ในโปรเจกต์ Phai Server (`D:\Project.NET\alpine-tools`) — ทำแล้วเฉพาะช่วงที่ 1 (คนในองค์กร); คนนอกรอบริการ phai.monrak.net
+แนวทางเต็ม (ภาษาไทย): `docs/e-document-sign.md` ในโปรเจกต์ Phai Server (`D:\Project.NET\alpine-tools`) — ช่วงที่ 1 (คนในองค์กร) และช่วงที่ 2 (คนนอกผ่านบริการ Phai Sign, โปรเจกต์ `phai-monrak`) ทำแล้ว
 
 - ซอง `env_mstr` (เลขชุด ENV ใน `env_ctrl`, `Numbering`): D ร่าง → S กำลังเซ็น → C เสร็จ / X ไม่อนุมัติ / W ถอน — ไฟล์ `envf_det` (M เอกสารหลัก มีช่อง, A แนบท้าย) ผู้ลงนาม `envs_det` (ขั้น `envs_step`, บทบาท S ลงนาม A อนุมัติ C รับทราบ, สถานะ W ยังไม่ถึงคิว R ถึงคิว S X C) ช่อง `envx_det` (pt จากมุมบนซ้ายของหน้าตามที่แสดง, `envx_page` นับรวมทุกเอกสารหลัก, `envx_link` = สำเนาที่เชื่อมกัน) เหตุการณ์ `envh_hist` เป็นโซ่ hash (`EnvelopeLog::add/check`, ปลายโซ่ `env_chain`) — ห้ามแก้หรือลบแถวเหตุการณ์
 - อัปโหลด (`EnvelopeFile::store`) แปลงทุกไฟล์เป็น PDF สะอาดด้วย PdfKit (รูป → A4 ผ่าน `Pdf::fromHtml`) เก็บ `envf_src_hash` (ไฟล์ที่อัปโหลด) และ `envf_hash` (ที่ส่งเซ็น) ไว้ที่ `storage/uploads/<db>/esign` — `EnvelopeFile::list()` ไม่ส่งชื่อไฟล์จริง ใช้ `rows()` ภายใน
@@ -217,6 +217,15 @@ database/seeds/40_menu.sql           เมนูหลัก (ภาษาไ�
 - ตรวจ (`EnvelopePdf::verify`): SHA-256 ทั้งไฟล์ = match, ตรงไฟล์ต้นฉบับ = original, อ่านได้และรู้ซอง → เทียบลายนิ้วมือรายหน้า (same-pages / changed + หน้าที่ต่าง) — ใครที่ไม่อยู่ในซองเห็นแค่ว่ามีซองนี้และเสร็จเมื่อไร
 - หน้าจอ: `/envelopes` (รอฉันเซ็น / ที่ฉันส่ง / เอกสารของฉัน), `/envelopes/{nbr}/edit` (ตัวแก้ `js/pages/envelope-edit.js`: วางช่อง ลาก ย่อขยาย เลือกหลายช่อง จัดแนว คัดลอก/ลบหลายหน้า เชื่อมกัน undo/redo คีย์ลัด บันทึกเองทุก 1.2 วินาที), `/envelopes/{nbr}/sign`, `/envelopes/{nbr}`, `/envelopes/verify` — หน้า PDF ใช้ pdf.js (`public/vendor/pdfjs`, `js/esign-pdf.js`) ไฟล์ `.mjs` เปลี่ยนชื่อเป็น `.js` ให้ทุก web server ส่งเป็น JavaScript; ข้อความ `lang/*/esign.php` ส่งเข้าหน้าเป็น JSON (`views/esign/_head.php`) — ตัวแปร view ห้ามชื่อ `data` (View::file ใช้ชื่อนี้เอง) จึงใช้ `payload`
 - ปุ่มซองจดหมายแถบบน = `Envelope::waitingCount()` — เทสต์ `tests/e2e/14-envelopes.php`
+- **คนนอก (kind E) ผ่านบริการ Phai Sign** (`EnvelopeRemote`, บริการเป็นโปรเจกต์แยก `D:\DesktopServer\www\phai-monrak`, ตัวจริงจะอยู่ที่ phai.monrak.net): เครื่องนี้เรียกออกไปหาบริการเท่านั้น ไม่มีอะไรเรียกเข้า
+  - ปิดเป็นค่าเริ่มต้น: ADMIN เปิดที่ปุ่ม **บริการคนนอก** หน้า `/envelopes` — ลงทะเบียนเครื่อง (`POST /api/v1/register` ได้ `env_remote_id` + `env_remote_key` เก็บใน `env_ctrl`, กุญแจไม่ส่งกลับไปที่หน้าเว็บ) แล้วเปิดใช้; ซองที่มีคนนอกส่งไม่ได้จนกว่าจะเปิด (`problems()`), ช่องตราบริษัทของคนนอกใช้ไม่ได้
+  - ทุกคำขอเซ็น HMAC-SHA256 (method, path, เวลา, nonce, SHA-256 ของ body) ใช้ PHP stream ไม่ต้องมี curl (Apache บนเครื่อง dev ไม่มี curl)
+  - ถึงขั้นของคนนอก: `nextStep()` ไม่ส่งอีเมลของเรา (ลิงก์ในวง LAN เปิดไม่ได้) → หลัง commit `EnvelopeRemote::after()` → `push()` ส่ง `EnvelopePdf::snapshot()` (เอกสารหลักที่ประทับช่องของผู้ส่งและของคนที่เซ็นแล้ว ไม่มีท้ายกระดาษ ไม่ย่อ) + แนบท้าย + ช่องของคนนั้น → เก็บ `envs_ext` (เลขคำขอ), `envs_ext_state`, ส่งไม่ได้เก็บ `envs_ext_err` แล้วลองใหม่ทุกครั้งที่ sync
+  - ผล: `sync()` (คำสั่ง `php bin/phai esign-sync` ทุก 15 นาทีบน Phai Server, และเมื่อเปิดหน้า `/envelopes` หรือหน้าซองไม่เกินทุก 30 วินาที `maybeSync()`) → `Envelope::remoteSigned()` (ตรวจ PNG แบบเดียวกับลายเซ็นที่วาด, เวลาเปิด/เซ็น IP เบราว์เซอร์ จากบริการ, เหตุการณ์ `signed` มี `remote.typed/font/consent/chain`) หรือ `remoteDeclined()` → `DELETE` ให้บริการลบสำเนา → ขั้นถัดไป
+  - เหตุการณ์ที่เกิดระหว่าง sync ไม่ผูกกับผู้ใช้ที่เปิดหน้า (`EnvelopeLog::$as = []`, หรือ `$by` = IP/เบราว์เซอร์ของคนนอก)
+  - ซองเสร็จ: คนนอกไม่ได้อีเมลแนบไฟล์จากเรา → `POST /api/v1/finals` บริการส่งลิงก์ดาวน์โหลด 30 วัน (`env_remote_final`, `-` = ไม่มีคนนอก) และ `POST /api/v1/witness` บันทึกเฉพาะ SHA-256 (`env_witness_id/at`, เปิดปิดที่ `env_witness_on`) แสดงในหน้าซองและหน้าตรวจ
+  - เตือน = บริการออกลิงก์ใหม่ (ลิงก์เก่าใช้ไม่ได้); ถอนซอง / ไม่อนุมัติ / เปลี่ยนผู้ลงนาม = ถอนคำขอที่บริการ (บริการแจ้งคนนอกเอง)
+  - เทสต์ `tests/e2e/15-outsiders.php` (ต้องมีบริการรันอยู่ที่ `PHAI_SIGN_URL` แบบ dev ไม่งั้นข้าม)
 
 ## AI ในตัว (src/Core/Ai)
 

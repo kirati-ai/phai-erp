@@ -41,5 +41,7 @@
     <li>The evidence pages give every file's page count, fingerprints (SHA-256) of each file and each page, the signers with the times they received, opened and signed, their IP, and the full history kept as a hash chain.</li>
     <li><b>Check a document</b>: pick a file; it says whether it matches what was signed, or which pages differ. The file is not kept.</li>
     <li>All times are the server's clock: let the server set its time from the internet.</li>
-    <li>People <b>outside the company</b> cannot be sent to yet (that waits for the phai.monrak.net service).</li>
+    <li>People <b>outside the company</b> ("Outsider" in the editor) sign through the Phai Sign service (phai.monrak.net): they get a mail with a link, confirm a 6-digit code sent to the same address, read the documents, type their name in a handwriting style and agree. The result comes back to the envelope by itself and the service deletes its copy; when the envelope is done they get a download link to the final document.</li>
+    <li>An administrator turns the service on first: the envelopes page, <b>Outside signers</b>, register this machine and turn it on (outsiders' documents stay at the service for a while; tell them as PDPA requires). It can also record the SHA-256 of every final document there as an outside witness.</li>
+    <li>If an outsider's link expired or locked, <b>Remind</b> sends them a new one; the old one stops working.</li>
 </ul>

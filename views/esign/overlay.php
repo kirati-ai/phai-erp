@@ -75,10 +75,12 @@ html, body { margin: 0; padding: 0; background: transparent; }
         </div>
     <?php endforeach ?>
     </div>
+    <?php if (!empty($s['foot'])): ?>
     <div class="ft" style="left:<?= $pt(min(28, $w * 0.04)) ?>;right:<?= $pt(min(28, $w * 0.04)) ?>;bottom:<?= $pt(max(1, ($fh < 22 ? 1 : 6))) ?>;height:<?= $pt($fh) ?>;font-size:<?= $pt(max(4, $fh * 0.3)) ?>">
         <span class="t"><?= e(t('esign.foot', ['nbr' => $nbr, 'page' => $s['foot']['page'], 'total' => $total])) ?> · <?= e($s['foot']['where']) ?> · <?= e(t('esign.foot_code', ['code' => $code])) ?></span>
         <img src="<?= e($qr) ?>" alt="" style="width:<?= $pt($fh - 1) ?>;height:<?= $pt($fh - 1) ?>">
     </div>
+    <?php endif ?>
 </div></div>
 <?php endforeach ?>
 </body></html>
