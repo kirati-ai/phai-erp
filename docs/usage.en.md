@@ -132,6 +132,21 @@ New screens: **Purchase returns** (from a goods receipt; deducted on the vendor 
 - Each answer lists where the data came from — check important figures on the screen before relying on them.
 - Administrators choose the provider (Claude / Gemini), API key and prices in **System › AI settings**, where the cost per user is also shown.
 
+## Signed documents (e-Document Sign)
+
+**Signed documents › Envelopes** sends documents from outside (PDF or pictures) to people in the company to sign in order, e.g. assistant manager → manager → owner.
+
+1. **New envelope** (needs the add right on Envelopes). Upload the **main document** (the one with boxes to sign) and **attachments**. Save Word files as PDF first; password-protected PDFs are refused. Every file is cleaned (JavaScript, links, form fields removed) before it is kept.
+2. Add the **signers**: user, position, and role Sign / Approve / Receive a copy. The arrows move them between steps; people in one step sign together, and the next step starts when one is fully signed.
+3. Pick a signer, pick a field (signature, initials, name, position, date signed, received · opened · signed, company stamp, text, checkbox) and click the page. The sender can add **text boxes** and **word stamps** (APPROVED, URGENT, CERTIFIED TRUE COPY ...). Fields copy to all pages / all but the first / pages you choose, linked if wanted, and are removed from many pages at once.
+4. Check **Before sending**, then **Send**. A sent envelope cannot be changed.
+5. Signers see it under **Waiting for me** (and the envelope button in the top bar), fill in their fields and sign with their saved signature or one drawn now, or **Decline** with a reason.
+6. When everyone has signed, everyone in the envelope gets the same **final document** (by email with the file when mail is set up, and under **My documents**).
+
+The final document has a footer on every page (envelope number, page x / total, which file and page, a QR code) and the **evidence of signing** pages: every file's page count, SHA-256 fingerprints of each file and each page, the signers with the times they received, opened and signed, and the full history kept as a hash chain. **Check a document** says whether a file matches what was signed and, if not, which pages differ.
+
+People outside the company cannot be sent to yet (that waits for the phai.monrak.net service). All times are the server's clock.
+
 ## Users and security
 
 - One role per user. Users are deactivated, not deleted; every change is kept in the audit log.

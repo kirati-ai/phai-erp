@@ -132,4 +132,9 @@ INSERT INTO `mnu_det` (`mnu_menu`, `mnu_code`, `mnu_name`, `mnu_access`, `mnu_ic
 ('9','9.15','บทบาทและสิทธิ์','roles','ti ti-shield-lock','/roles',15,'_self'),
 ('9','9.16','เมนู','menus','ti ti-menu-2','/menus',16,'_self'),
 ('9','9.50','ทำรายการ','*',NULL,'#',50,'_self'),
-('9','9.51','ผู้ใช้','users','ti ti-users','/users',51,'_self');
+('9','9.51','ผู้ใช้','users','ti ti-users','/users',51,'_self'),
+-- 7: เอกสารลงนาม (e-Document Sign), shown before the system settings
+('7','7.0','เอกสารลงนาม','*','ti ti-file-certificate','#',70,'_self'),
+('7','7.50','ทำรายการ','*',NULL,'#',50,'_self'),
+('7','7.51','ซองเอกสาร','*','ti ti-mail-opened','/envelopes',51,'_self'),
+('7','7.52','ตรวจเอกสาร','*','ti ti-shield-check','/envelopes/verify',52,'_self');

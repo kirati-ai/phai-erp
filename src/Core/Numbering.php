@@ -56,6 +56,7 @@ final class Numbering
         'WO'  => ['wo_ctrl', 'wo'],
         'QC'  => ['wo_ctrl', 'qc'],
         'MI'  => ['wo_ctrl', 'wo_mi'],
+        'ENV' => ['env_ctrl', 'env'],
     ];
 
     /**
@@ -142,6 +143,7 @@ final class Numbering
         'PI'  => ['pi_mstr', 'pi_batch'],
         'WHT' => ['wht_cert', 'whtc_nbr'],
         'PC'  => ['cb_mstr', 'cb_nbr'],   // เงินสดย่อย
+        'ENV' => ['env_mstr', 'env_nbr'], // ซองเอกสารลงนาม
     ];
 
     private static bool $typedUsed = false;

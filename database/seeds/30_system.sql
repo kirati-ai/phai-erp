@@ -15,6 +15,8 @@ INSERT INTO `so_ctrl` (`ctrl_id`, `so_next_nbr`, `so_prefix`, `so_inv_next_nbr`,
 
 INSERT INTO `wo_ctrl` (`ctrl_id`, `wo_next_nbr`, `wo_prefix`, `qc_next_nbr`, `qc_prefix`, `created_by`, `created_at`, `updated_by`, `updated_at`) VALUES (1,1,'WO',1,'QC',NULL,NULL,NULL,NULL);
 
+INSERT INTO `env_ctrl` (`ctrl_id`, `env_prefix`) VALUES (1,'ENV');
+
 INSERT INTO `ar_ctrl` (`ctrl_id`, `bl_next_nbr`, `bl_prefix`, `cr_next_nbr`, `cr_prefix`, `created_by`, `created_at`, `updated_by`, `updated_at`) VALUES (1,1,'BL',1,'CR',NULL,NULL,NULL,NULL);
 
 INSERT INTO `ap_ctrl` (`ctrl_id`, `vo_next_nbr`, `vo_prefix`, `whtc_next_nbr`, `whtc_prefix`, `pay_next_nbr`, `pay_prefix`) VALUES (1,1,'VO',1,'WT',1,'PV');

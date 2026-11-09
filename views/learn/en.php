@@ -19,6 +19,7 @@ return [
         ['icon' => 'ti-building-factory-2', 'name' => 'Manufacturing', 'term' => 'Manufacturing / MRP', 'does' => 'Bills of materials, material planning, work orders, production cost', 'link' => '/production'],
         ['icon' => 'ti-receipt', 'name' => 'Sales', 'term' => 'Sales / CRM', 'does' => 'Customers, quotations, sales orders, shipping, tax invoices, billing — CRM means looking after customers', 'link' => '/sales'],
         ['icon' => 'ti-report-money', 'name' => 'Accounting', 'term' => 'Finance: AP AR GL FA Tax', 'does' => 'Payables, receivables, general ledger, fixed assets, tax', 'link' => '/accounting'],
+        ['icon' => 'ti-file-certificate', 'name' => 'Signed documents', 'term' => 'e-Signature / e-Document', 'does' => 'Send documents from outside to be signed in order, with received, opened and signed times and evidence of signing — nothing is posted', 'link' => '/envelopes'],
     ],
     'links_title' => 'How the modules link',
     'links' => [
@@ -125,6 +126,7 @@ return [
     'glossary_title' => 'Glossary',
     'glossary' => [
         ['ERP', 'Enterprise resource planning — one system in which every department shares the same database'],
+        ['e-Signature (ลายมือชื่ออิเล็กทรอนิกส์)', 'Signing a document electronically in a way that identifies the signer and shows their intent, under the Electronic Transactions Act B.E. 2544 — here, an envelope with its evidence of signing'],
         ['Petty cash (เงินสดย่อย)', 'Cash a staff member holds to pay small expenses; the holder answers for the cash in hand and counts it against the records every month end, with any difference posted to cash over and short'],
         ['SRM', 'Supplier relationship management: choosing vendors, ordering, following up deliveries, evaluating them'],
         ['CRM', 'Customer relationship management: customer data, prices, credit limits, purchase history'],

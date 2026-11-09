@@ -26,3 +26,11 @@ to operate completely offline without any internet connection.
 - **Files:** `ibm-plex-sans-thai.css` and `.woff2` files for Thai, Latin, Latin-ext, Cyrillic-ext subsets
 - **Source:** [IBM Plex](https://github.com/IBM/plex) / Google Fonts via `@fontsource/ibm-plex-sans-thai`
 - **License:** SIL Open Font License 1.1 (see `public/fonts/ibm-plex-sans-thai/LICENSE`)
+
+### 4. PDF.js
+- **Version:** 4.10.38
+- **Path:** `public/vendor/pdfjs/`
+- **Files:** `pdf.min.js`, `pdf.worker.min.js` (the `build/pdf.min.mjs` and `build/pdf.worker.min.mjs` of the npm package, renamed to `.js` so every web server sends them as JavaScript)
+- **Source:** [PDF.js](https://mozilla.github.io/pdf.js/) via the npm registry (`pdfjs-dist@4.10.38`)
+- **License:** Apache License 2.0 (see `public/vendor/pdfjs/LICENSE`)
+- **Used by:** e-Document Sign (`js/esign-pdf.js`): shows the pages of an envelope to place and fill its fields
