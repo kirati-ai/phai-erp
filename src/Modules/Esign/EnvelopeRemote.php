@@ -11,7 +11,7 @@ use Phai\Core\Lang;
 
 /**
  * People outside the company (signers of kind E) sign through the Phai Sign service (phai.monrak.net, its own project
- * phai-monrak). This machine always calls out to it; nothing calls in, so no port is opened.
+ * phai-sign). This machine always calls out to it; nothing calls in, so no port is opened.
  *
  * When an outsider's step comes, push() sends the main documents with what earlier signers filled in already stamped
  * on (EnvelopePdf::snapshot), the attachments, and that person's fields. The service mails them, checks a code sent to
@@ -410,7 +410,7 @@ final class EnvelopeRemote
 
     // ------------------------------------------------------------------ the wire
 
-    /** A signed call: HMAC-SHA256 over method, path, time, nonce and the body's SHA-256 (phai-monrak src/Api.php). */
+    /** A signed call: HMAC-SHA256 over method, path, time, nonce and the body's SHA-256 (phai-sign src/Api.php). */
     private static function call(string $method, string $path, ?array $body = null): array
     {
         $s = self::settings();
