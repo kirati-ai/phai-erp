@@ -4,5 +4,6 @@ $json = fn ($v) => json_encode($v, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_
 ?>
 <link rel="stylesheet" href="<?= e(asset('css/esign.css')) ?>">
 <link rel="stylesheet" href="<?= e(asset('fonts/handwriting/handwriting.css')) ?>">
+<script src="<?= e(asset('js/esign-split.js')) ?>"></script>
 <script id="esign-text" type="application/json"><?= $json($esignText) ?></script>
 <script id="esign-data" type="application/json"><?= $json($payload ?? null) ?></script>

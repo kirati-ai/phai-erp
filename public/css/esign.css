@@ -17,7 +17,7 @@
 .es-sep { width: 1px; align-self: stretch; background: var(--tblr-border-color); margin: 0 .2rem; }
 .es-format .es-what { font-size: .75rem; font-weight: 600; margin-right: .2rem; white-space: nowrap; }
 .es-format .es-what small { font-weight: 400; color: var(--tblr-secondary); }
-.es-format .es-size { width: 4rem; }
+.es-format .es-size { width: 4.6rem; }
 .es-format .form-control-color { width: 1.9rem; height: 1.7rem; padding: .1rem; }
 .es-menu { min-width: 15rem; font-size: .8rem; }
 .es-menu label { font-size: .72rem; color: var(--tblr-secondary); margin-bottom: .1rem; }
@@ -93,3 +93,42 @@
 .es-srow .es-sname { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .es-srow .es-sname small { color: var(--tblr-secondary); }
 .es-srow .btn { padding: .1rem .3rem; }
+
+/* envelope lists: the whole row opens the envelope */
+.es-rows tbody tr[data-href] { cursor: pointer; }
+
+/* signing page: the signature used, in the panel */
+.es-sigbox-lg { height: 76px; background: #fff; }
+.es-sigbox-lg img { max-height: 70px; max-width: 100%; }
+
+/* signing and envelope pages: the document on the left, a panel on the right, a bar between them dragged to
+   change the panel's width (js/esign-split.js); each side scrolls on its own */
+.es-split { display: grid; grid-template-columns: minmax(0, 1fr) .6rem var(--es-side, 24rem); align-items: stretch; min-height: 20rem; }
+.es-split > .es-doc-pane, .es-split > .es-side-pane { min-width: 0; min-height: 0; overflow: auto; }
+.es-split > .es-doc-pane > .es-pages { min-height: 100%; }
+.es-split > .es-side-pane { padding-right: .15rem; }
+.es-side-pane .card + .card { margin-top: .6rem; }
+.es-handle { cursor: col-resize; position: relative; touch-action: none; }
+.es-handle::before { content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; transform: translateX(-50%); background: var(--tblr-border-color); border-radius: 2px; transition: background .15s; }
+.es-handle::after { content: ''; position: absolute; top: 50%; left: 50%; width: .35rem; height: 2.2rem; transform: translate(-50%, -50%); border-radius: 3px; background: var(--tblr-border-color); }
+.es-handle:hover::before, .es-handle:focus-visible::before, .es-dragging .es-handle::before { background: var(--tblr-primary); }
+.es-handle:hover::after, .es-dragging .es-handle::after { background: var(--tblr-primary); }
+.es-dragging { user-select: none; cursor: col-resize; }
+.es-dragging iframe { pointer-events: none; }
+@media (max-width: 991px) {
+    .es-split { grid-template-columns: 1fr; height: auto !important; }
+    .es-split > .es-doc-pane, .es-split > .es-side-pane { overflow: visible; }
+    .es-handle { display: none; }
+}
+
+/* envelope page: the signers above, the final document filling the rest of the left side */
+.es-col { display: flex; flex-direction: column; gap: .6rem; }
+.es-final-card { flex: 1 1 auto; min-height: 24rem; overflow: hidden; }
+.es-final-card iframe { width: 100%; height: 100%; min-height: 24rem; border: 0; display: block; }
+
+/* a note to read before going on (outsiders sign through Phai Sign): dark text on a pale amber box, readable in
+   both themes, instead of yellow text on white */
+.es-note-info { display: flex; gap: .45rem; align-items: flex-start; padding: .45rem .6rem; border-radius: 4px; font-size: .8rem; line-height: 1.45;
+    background: #fff6e0; border: 1px solid #f0d58a; color: #5c4400; }
+.es-note-info .ti { font-size: 1rem; margin-top: .05rem; color: #b07800; }
+[data-bs-theme="dark"] .es-note-info { background: #3a2f12; border-color: #6b5520; color: #f3e2b3; }

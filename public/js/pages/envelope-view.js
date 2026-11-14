@@ -101,4 +101,6 @@
         render();
     });
     render();
+    // signers and the final document on the left, files and history on the right, the bar between them dragged
+    window.PhaiSplit.init(document.querySelector('.es-split'), 'view');
 })();

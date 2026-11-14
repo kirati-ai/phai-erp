@@ -263,6 +263,10 @@ final class EnvelopeController
             $s['signed'] = Envelope::when($s['envs_sign_at']);
         }
         unset($s);
+        // "me" is a copy of my signer row: the signing page says when I signed from it
+        if (!empty($data['me'])) {
+            $data['me']['signed'] = Envelope::when($data['me']['envs_sign_at'] ?? null);
+        }
         if ($data['can']['edit']) {
             $data['problems'] = Envelope::problems($nbr);
         }
