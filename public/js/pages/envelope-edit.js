@@ -453,6 +453,8 @@
                 el.style.fontStyle = f.props.italic ? 'italic' : '';
                 el.style.textDecoration = f.props.underline ? 'underline' : '';
                 el.style.fontFamily = FONTS[f.props.font] || '';
+                // the text colour, as the final PDF draws it (the box keeps its signer's colour)
+                if (f.props.color && f.type !== 'mark' && f.type !== 'label') el.style.color = f.props.color;
                 el.style.justifyContent = { center: 'center', right: 'flex-end' }[f.props.align] || (f.type === 'mark' ? 'center' : 'flex-start');
             }
             el.innerHTML = `<span class="es-lbl">${esc(label(f))}</span><span class="es-h"></span>${f.link ? '<i class="ti ti-link es-link"></i>' : ''}`;
@@ -506,8 +508,8 @@
             place(p, x, y);
             return;
         }
-        // drag a box to select what it touches
-        if (!e.shiftKey) selected.clear();
+        // drag a box to select what it touches (Shift / Ctrl / Cmd adds to what is selected)
+        if (!(e.shiftKey || e.ctrlKey || e.metaKey)) selected.clear();
         const band = document.createElement('div');
         band.className = 'es-band';
         p.layer.append(band);
@@ -543,7 +545,8 @@
             tool = null;
             markTool();
         }
-        if (e.shiftKey) {
+        // Shift, Ctrl or Cmd + click adds a field to the selection, or takes it out
+        if (e.shiftKey || e.ctrlKey || e.metaKey) {
             selected.has(f.id) ? selected.delete(f.id) : selected.add(f.id);
             renderFields();
             renderProps();
@@ -553,7 +556,7 @@
         const resizing = e.target.classList.contains('es-h');
         const s = view.scale;
         const moving = [...selected].map(field).filter((x) => x && !x.props.locked && x.page === f.page);
-        const start = { x: e.clientX, y: e.clientY, items: moving.map((x) => ({ f: x, x: x.x, y: x.y, w: x.w, h: x.h })) };
+        const start = { x: e.clientX, y: e.clientY, items: moving.map((x) => ({ f: x, x: x.x, y: x.y, w: x.w, h: x.h, size: x.props.size || (x.type === 'mark' ? 12 : 10) })) };
         let touched = false;
         const move = (ev) => {
             const dx = (ev.clientX - start.x) / s;
@@ -568,6 +571,14 @@
                     if (it.f !== f) return;
                     it.f.w = snap(it.w + dx);
                     it.f.h = snap(it.h + dy);
+                    clamp(it.f);
+                    // text grows and shrinks with the box's height, in half points
+                    if (TEXTY.includes(it.f.type)) {
+                        const size = Math.max(5, Math.min(72, Math.round(it.size * (it.f.h / it.h) * 2) / 2));
+                        it.f.props = { ...it.f.props, size };
+                        const el = p.layer.querySelector(`.es-field[data-id="${it.f.id}"]`);
+                        if (el) el.style.fontSize = Math.max(6, Math.min(size * s, it.f.h * s * 0.8)) + 'px';
+                    }
                 } else {
                     it.f.x = snap(it.x + dx);
                     it.f.y = snap(it.y + dy);
@@ -1206,11 +1217,31 @@
             $('es-del-custom').hidden = el.value !== 'custom';
             return;
         }
+        if (el.dataset.p === 'color') {
+            // already applied while picking (below); now the picker is closed, so the bar may be drawn again
+            colorPicking = false;
+            changed();
+            return;
+        }
         if (el.dataset.toggle) propToggle(el.dataset.toggle, el);
         else if (el.dataset.p || el.dataset.geo) propInput(el);
     });
+    // The colour picker sends "input" while it is open and "change" only when it closes: apply each colour at once,
+    // without drawing the bar again (that would close the picker), and remember the state before the first one.
+    let colorPicking = false;
     $('es-props').addEventListener('input', (e) => {
         const k = e.target.dataset.p;
+        if (k === 'color') {
+            if (!colorPicking) {
+                remember();
+                colorPicking = true;
+            }
+            sel().forEach((f) => { f.props = { ...f.props, color: e.target.value }; });
+            propagateLinks();
+            renderFields();
+            save();
+            return;
+        }
         if (k === 'text' || k === 'label') {
             const list = sel();
             list.forEach((f) => { f.props = { ...f.props, [k]: e.target.value }; });

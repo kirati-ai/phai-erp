@@ -148,6 +148,11 @@
             // the field's font, as the final PDF draws it (Envelope::FONTS)
             const font = { noto: 'Noto Sans Thai', charm: 'Charm', charmonman: 'Charmonman', itim: 'Itim', mali: 'Mali', sriracha: 'Sriracha' }[f.envx_props.font];
             if (font) el.style.fontFamily = `'${font}', 'IBM Plex Sans Thai', sans-serif`;
+            // the text's look, as the final PDF draws it
+            if (f.envx_props.color) el.style.color = f.envx_props.color;
+            if (f.envx_props.bold) el.style.fontWeight = '700';
+            if (f.envx_props.italic) el.style.fontStyle = 'italic';
+            if (f.envx_props.underline) el.style.textDecoration = 'underline';
             if (f.envx_type === 'mark') {
                 el.style.color = f.envx_props.color || '#c92a2a';
                 el.style.justifyContent = 'center';
