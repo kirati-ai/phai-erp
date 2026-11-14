@@ -261,6 +261,7 @@ final class EnvelopeController
             $data['events'] = array_map(fn ($h) => [
                 'at' => Envelope::when($h['envh_at']), 'event' => $h['envh_event'], 'who' => $h['envs_name'] ?? $h['us_name'] ?? $h['envh_userid'],
                 'ip' => $h['envh_ip'], 'detail' => json_decode((string) $h['envh_detail'], true),
+                'signer' => $h['envh_signer'] !== null ? (int) $h['envh_signer'] : null, // a click shows that signer's fields
             ], EnvelopeLog::all($nbr));
             $data['chainBroken'] = EnvelopeLog::check($nbr);
         }

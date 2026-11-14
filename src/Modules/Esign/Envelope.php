@@ -288,10 +288,32 @@ final class Envelope
             $db = App::db();
             $db->update('env_mstr', ['env_title' => $title, 'env_note' => $note !== '' ? $note : null, 'updated_by' => $me], ['env_nbr' => $nbr]);
             $db->run('DELETE FROM envx_det WHERE envx_nbr = ?', [$nbr]);
-            $db->run('DELETE FROM envs_det WHERE envs_nbr = ?', [$nbr]);
+            // Signer rows are kept and updated, not made again: the history names signers by their row, so a draft
+            // reopened after a first round still shows who received, opened or declined then. A row is the editor's
+            // "s<id>", else an unclaimed row of the same person (a signer added since the page loaded); the rest go.
+            $old = $db->all('SELECT envs_id, envs_kind, envs_userid, envs_email FROM envs_det WHERE envs_nbr = ?', [$nbr]);
+            $free = array_column($old, null, 'envs_id');
             $ids = [];
             foreach ($signers as $key => $row) {
-                $ids[$key] = (int) $db->insert('envs_det', $row + ['envs_nbr' => $nbr, 'created_by' => $me, 'updated_by' => $me]);
+                $id = preg_match('/^s(\d+)$/', (string) $key, $m) && isset($free[(int) $m[1]]) ? (int) $m[1] : null;
+                if ($id === null) {
+                    foreach ($free as $o) {
+                        if ($o['envs_kind'] === $row['envs_kind'] && ($row['envs_kind'] === 'U' ? $o['envs_userid'] === $row['envs_userid'] : strcasecmp((string) $o['envs_email'], (string) $row['envs_email']) === 0)) {
+                            $id = (int) $o['envs_id'];
+                            break;
+                        }
+                    }
+                }
+                if ($id !== null) {
+                    unset($free[$id]);
+                    $db->update('envs_det', $row + ['updated_by' => $me], ['envs_id' => $id]);
+                    $ids[$key] = $id;
+                } else {
+                    $ids[$key] = (int) $db->insert('envs_det', $row + ['envs_nbr' => $nbr, 'created_by' => $me, 'updated_by' => $me]);
+                }
+            }
+            foreach (array_keys($free) as $gone) {
+                $db->run('DELETE FROM envs_det WHERE envs_id = ?', [$gone]);
             }
             foreach ($fields as $f) {
                 $signer = $f['signer'] === null ? null : $ids[$f['signer']];

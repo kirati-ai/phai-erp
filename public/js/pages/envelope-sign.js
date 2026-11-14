@@ -142,7 +142,8 @@
             const mine = D.can.sign && f.envx_signer === mineId;
             const el = document.createElement('div');
             const sg = byId.get(f.envx_signer);
-            el.className = 'es-field ' + (mine ? 'es-mine' : 'es-other') + (f.envx_signer === null ? ' es-sender' : '');
+            // someone else's field already signed shows only what they signed, without the coloured frame
+            el.className = 'es-field ' + (mine ? 'es-mine' : 'es-other') + (f.envx_signer === null ? ' es-sender' : '') + (!mine && sg && sg.envs_status === 'S' ? ' es-done' : '');
             el.style.cssText = `left:${f.envx_x * s}px;top:${f.envx_y * s}px;width:${f.envx_w * s}px;height:${f.envx_h * s}px;font-size:${Math.max(7, Math.min((f.envx_props.size || 10) * s, f.envx_h * s * 0.8))}px`;
             if (sg) el.style.setProperty('--es-c', sg.envs_color || '#1d6fd8');
             // the field's font, as the final PDF draws it (Envelope::FONTS)

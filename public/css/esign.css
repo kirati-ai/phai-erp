@@ -74,8 +74,12 @@
 @keyframes es-pulse { 50% { box-shadow: 0 0 0 4px rgba(214, 51, 108, .45); } }
 
 /* envelope page */
-.es-timeline { list-style: none; padding: 0; margin: 0; font-size: .8rem; }
-.es-timeline li { display: grid; grid-template-columns: 11rem 1fr; gap: .5rem; padding: .25rem 0; border-bottom: 1px solid var(--tblr-border-color-translucent, #eee); }
+.es-timeline { list-style: none; padding: 0; margin: 0; }
+.es-timeline li { display: grid; grid-template-columns: 8.5rem 1fr; gap: .5rem; padding: .2rem 0; border-bottom: 1px solid var(--tblr-border-color-translucent, #eee); font-size: .72rem; line-height: 1.35; }
+/* an event of a signer: a click shows their fields on the document */
+.es-timeline li[data-signer] { cursor: pointer; }
+.es-timeline li[data-signer]:hover { background: var(--tblr-bg-surface-secondary, #f3f5f4); }
+#es-signers tr[data-signer] { cursor: pointer; }
 .es-hash { font-family: var(--tblr-font-monospace, monospace); font-size: .72rem; word-break: break-all; }
 
 /* inside / outside: the chosen one filled, like a pressed button */
@@ -132,3 +136,7 @@
     background: #fff6e0; border: 1px solid #f0d58a; color: #5c4400; }
 .es-note-info .ti { font-size: 1rem; margin-top: .05rem; color: #b07800; }
 [data-bs-theme="dark"] .es-note-info { background: #3a2f12; border-color: #6b5520; color: #f3e2b3; }
+
+/* envelope page: the document so far, read only; a signed field without its box */
+.es-doc-card .es-pages { border-radius: 0 0 var(--tblr-border-radius) var(--tblr-border-radius); }
+.es-field.es-done { border-color: transparent; background: transparent; }
