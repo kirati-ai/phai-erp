@@ -25,7 +25,7 @@ $open = ['/api/geo/provinces', '/api/geo/districts/{pv_id}', '/api/geo/subdistri
     '/envelopes', '/envelopes/verify', '/envelopes/{nbr}', '/envelopes/{nbr}/edit', '/envelopes/{nbr}/sign', '/envelopes/{nbr}/files/{id}',
     '/envelopes/{nbr}/final', '/api/envelopes', '/api/envelopes/people', '/api/envelopes/verify', '/api/envelopes/{nbr}',
     '/api/envelopes/{nbr}/files', '/api/envelopes/{nbr}/files/{id}', '/api/envelopes/{nbr}/send', '/api/envelopes/{nbr}/sign',
-    '/api/envelopes/{nbr}/decline', '/api/envelopes/{nbr}/recall', '/api/envelopes/{nbr}/remind', '/api/envelopes/{nbr}/replace',
+    '/api/envelopes/{nbr}/decline', '/api/envelopes/{nbr}/recall', '/api/envelopes/{nbr}/reopen', '/api/envelopes/{nbr}/remind', '/api/envelopes/{nbr}/replace',
     '/api/envelopes/sync'];
 
 $a = login('admin', $pw);

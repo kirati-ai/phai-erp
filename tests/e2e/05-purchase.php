@@ -92,7 +92,8 @@ $hs = implode("
 ", $h);
 if (str_contains($hs, 'application/pdf')) {
     ok('PDF made on the server: one A4 page, Thai font embedded, named after the order', $s === 200 && str_starts_with($pdf, '%PDF')
-        && preg_match_all('#/Type\s*/Page[^s]#', $pdf) === 1 && str_contains($pdf, 'IBMPlexSansThai') && str_contains($hs, "filename=\"$po2.pdf\""), [$s, strlen($pdf)]);
+        && preg_match_all('#/Type\s*/Page[^s]#', $pdf) === 1 && str_contains($pdf, 'IBMPlexSansThai') && str_contains($hs, "filename=\"$po2.pdf\""),
+        [$s, strlen($pdf), preg_match_all('#/Type\s*/Page[^s]#', $pdf), str_contains($pdf, 'IBMPlexSansThai'), preg_match('/filename="[^"]*"/', $hs, $fn) ? $fn[0] : $hs]);
 } else {
     ok('no browser on this server: the print page is returned instead', $s === 200 && str_contains($pdf, 'doc-toolbar'));
 }

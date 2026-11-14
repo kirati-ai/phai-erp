@@ -66,10 +66,13 @@ final class Pdf
         $pdf = "$dir/page.pdf";
         // links like /phai-erp/css/... and /phai-erp/logo resolve against the site
         $origin = preg_replace('#^(https?://[^/]+).*$#', '$1', (string) App::config('app.url', 'http://localhost'));
+        $isPhaiPdf = str_ends_with(str_replace('\\', '/', $browser), 'phai-pdf');
+        if (!$isPhaiPdf) {
+            $html = self::localFiles($html);
+        }
         file_put_contents($page, preg_replace('/<head>/i', '<head><base href="' . htmlspecialchars($origin . '/') . '">', $html, 1));
 
         try {
-            $isPhaiPdf = str_ends_with(str_replace('\\', '/', $browser), 'phai-pdf');
             $command = $isPhaiPdf
                 ? [$browser, $page, $pdf]
                 : [
@@ -119,6 +122,22 @@ final class Pdf
         } finally {
             self::remove($dir);
         }
+    }
+
+    /**
+     * Stylesheets and scripts of the site as file:// links. Edge/Chrome open the page from a file, and a file page
+     * may not use fonts from http://localhost (CORS), so the print would fall back to Tahoma. Fonts next to a local
+     * stylesheet load. Other links (logo, signatures) stay on the site.
+     */
+    private static function localFiles(string $html): string
+    {
+        $base = rtrim((string) parse_url((string) App::config('app.url', ''), PHP_URL_PATH), '/') . '/';
+        $public = str_replace('\\', '/', PHAI_ROOT . '/public/');
+        return preg_replace_callback('#(<link\b[^>]*\bhref|<script\b[^>]*\bsrc)="' . preg_quote($base, '#') . '([^"?]+)(\?[^"]*)?"#i',
+            function (array $m) use ($public): string {
+                $file = $public . $m[2];
+                return is_file($file) && !str_contains($m[2], '..') ? $m[1] . '="file:///' . ltrim($file, '/') . '"' : $m[0];
+            }, $html);
     }
 
     /** The page as an inline PDF named after the document; the HTML page itself when no browser is set up. */
