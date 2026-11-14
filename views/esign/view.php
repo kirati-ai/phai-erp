@@ -26,6 +26,11 @@ echo \Phai\Core\View\View::partial('esign/_head', ['esignText' => $esignText, 'p
                 </table>
             </div>
         </div>
+        <!-- until the final document exists: the pages with what is signed so far (read only) -->
+        <div class="card es-doc-card" id="es-doc-card" hidden>
+            <div class="card-header py-2"><h3 class="card-title"><i class="ti ti-file-text me-1"></i><?= e(t('esign.doc_so_far')) ?></h3></div>
+            <div class="es-pages" id="es-pages"></div>
+        </div>
         <div class="card es-final-card" id="es-final-card" hidden>
             <iframe id="es-final-frame" title="<?= e(t('esign.final')) ?>"></iframe>
         </div>

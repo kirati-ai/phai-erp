@@ -355,6 +355,7 @@ return [
     'ev_replaced'           => 'Signer changed',
     'ev_recalled'           => 'Envelope withdrawn',
     'ev_reopened'           => 'Reopened as a draft to edit',
+    'doc_so_far'            => 'The document and signatures so far · click a signer or an event to see their fields',
     'ev_completed'          => 'Fully signed, final document made',
     'ev_delivered'          => 'Final document sent to everyone',
     'outside_need_service'  => ':name is outside the company: an administrator must turn on the Phai Sign service first ("Outside signers" on the envelopes page)',

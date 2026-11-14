@@ -43,7 +43,7 @@
         $('es-final-card').hidden = !D.can.final;
         if (D.can.final && !$('es-final-frame').src) $('es-final-frame').src = `${base}/envelopes/${nbr}/final`;
 
-        $('es-signers').innerHTML = D.signers.map((s) => `<tr${s.envs_status === 'C' ? ' class="text-secondary"' : ''}>
+        $('es-signers').innerHTML = D.signers.map((s) => `<tr data-signer="${s.envs_id}"${s.envs_status === 'C' ? ' class="text-secondary"' : ''}>
             <td>${s.envs_role === 'C' ? '' : s.envs_step}</td>
             <td><b>${esc(s.envs_name)}</b>${s.envs_kind === 'E' ? ` <span class="badge bg-azure-lt">${esc(T.ev_outside)}</span><div class="small text-secondary">${esc(s.envs_email || '')}</div>` : ''}${s.envs_position ? `<div class="small text-secondary">${esc(s.envs_position)}</div>` : ''}</td>
             <td>${esc(T['role_' + s.envs_role])}</td>
@@ -65,7 +65,96 @@
         $('es-chain').innerHTML = D.chainBroken === null
             ? `<span class="badge bg-green-lt" title="${esc(T.chain_ok_hint)}"><i class="ti ti-link me-1"></i>${esc(T.chain_ok)}</span>`
             : `<span class="badge bg-red-lt"><i class="ti ti-unlink me-1"></i>${esc(T.chain_broken)}</span>`;
-        $('es-events').innerHTML = (D.events || []).map((h) => `<li><span class="text-secondary">${esc(h.at)}</span><span>${esc(T['ev_' + h.event] || h.event)}${h.who ? ` · <b>${esc(h.who)}</b>` : ''}${h.detail?.reason ? ` · ${esc(h.detail.reason)}` : ''}</span></li>`).join('');
+        $('es-events').innerHTML = (D.events || []).map((h) => `<li${h.signer ? ` data-signer="${h.signer}" data-who="${esc(h.who || '')}"` : ''}><span class="text-secondary">${esc(h.at)}</span><span>${esc(T['ev_' + h.event] || h.event)}${h.who ? ` · <b>${esc(h.who)}</b>` : ''}${h.detail?.reason ? ` · ${esc(h.detail.reason)}` : ''}</span></li>`).join('');
+        renderDoc();
+    }
+
+    // ------------------------------------------------------------------ the document so far (until the final one exists)
+
+    const byId = () => new Map(D.signers.map((s) => [+s.envs_id, s]));
+    const FONTS = { noto: 'Noto Sans Thai', charm: 'Charm', charmonman: 'Charmonman', itim: 'Itim', mali: 'Mali', sriracha: 'Sriracha' };
+    // a date field's format, as Envelope::dateAs() stamps it (envelope-edit.js and envelope-sign.js have the same)
+    function dateAs(at, fmt) {
+        const d = new Date(String(at).replace(' ', 'T'));
+        const short = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+        const long = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+        const en = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const [day, m, y] = [d.getDate(), d.getMonth(), d.getFullYear()];
+        const two = (n) => String(n).padStart(2, '0');
+        return {
+            th_long: `${day} ${long[m]} ${y + 543}`, num_be: `${two(day)}/${two(m + 1)}/${y + 543}`, num_ce: `${two(day)}/${two(m + 1)}/${y}`,
+            iso: `${y}-${two(m + 1)}-${two(day)}`, en: `${day} ${en[m]} ${y}`,
+        }[fmt] || `${day} ${short[m]} ${y + 543}`;
+    }
+
+    /** What a field shows here: what is signed and filled in so far, else what it is waiting for and whose it is. */
+    function content(f, s) {
+        const signed = s && s.envs_status === 'S';
+        const p = f.envx_props || {};
+        const wait = (label) => `<span class="es-lbl">${esc(label)}${s ? ' · ' + esc(s.envs_name) : ''}</span>`;
+        switch (f.envx_type) {
+            case 'signature':
+            case 'initials':
+                return signed && s.envs_image ? `<img src="${esc(s.envs_image)}" alt="">` : wait(T['type_' + f.envx_type]);
+            case 'name': return `<span class="es-lbl">${esc(s?.envs_name || '')}</span>`;
+            case 'position': return `<span class="es-lbl">${esc(s?.envs_position || '')}</span>`;
+            case 'date': return signed && s.envs_sign_at ? `<span class="es-lbl">${esc(dateAs(s.envs_sign_at, p.datefmt))}</span>` : wait(T.type_date);
+            case 'timeline': return `<span class="es-lbl">${esc(signed ? s.times || '' : T.type_timeline)}</span>`;
+            case 'text': return f.envx_value ? `<span class="es-lbl">${esc(f.envx_value)}</span>` : wait(p.label || T.type_text);
+            case 'checkbox': return f.envx_value === '1' ? '<i class="ti ti-check" style="margin:auto"></i>' : '';
+            case 'stamp': return `<span class="es-lbl">${esc(T.type_stamp)}</span>`;
+            default: return `<span class="es-lbl">${esc(p.text || '')}</span>`;
+        }
+    }
+
+    let docView = null;
+    function renderDoc() {
+        const main = D.files.filter((f) => f.envf_kind === 'M');
+        const show = !D.can.final && main.length > 0;
+        $('es-doc-card').hidden = !show;
+        if (!show) return;
+        const box = $('es-pages');
+        const fit = () => Math.max(0.4, Math.min(2, (box.clientWidth - 60) / Math.max(...(D.pages?.length ? D.pages.map((x) => x[0]) : [595]))));
+        if (!docView) docView = PhaiPdf.pages(box, main.map((f) => ({ url: `${base}/envelopes/${nbr}/files/${f.envf_id}`, pages: f.envf_sizes })), fit());
+        else docView.zoom(fit());
+        const sc = docView.scale;
+        const who = byId();
+        docView.list.forEach((pg) => pg.layer.replaceChildren());
+        D.fields.forEach((f) => {
+            const pg = docView.list[f.envx_page - 1];
+            if (!pg) return;
+            const s = f.envx_signer === null ? null : who.get(+f.envx_signer);
+            const p = f.envx_props || {};
+            const el = document.createElement('div');
+            el.className = 'es-field es-other' + (f.envx_signer === null ? ' es-sender' : '') + (s && s.envs_status === 'S' ? ' es-done' : '');
+            el.dataset.signer = f.envx_signer ?? '';
+            el.style.cssText = `left:${f.envx_x * sc}px;top:${f.envx_y * sc}px;width:${f.envx_w * sc}px;height:${f.envx_h * sc}px;font-size:${Math.max(6, Math.min((p.size || 10) * sc, f.envx_h * sc * 0.8))}px;cursor:default`;
+            if (s) el.style.setProperty('--es-c', s.envs_color || '#1d6fd8');
+            if (FONTS[p.font]) el.style.fontFamily = `'${FONTS[p.font]}', 'IBM Plex Sans Thai', sans-serif`;
+            if (p.color) el.style.color = p.color;
+            if (p.bold) el.style.fontWeight = '700';
+            if (p.italic) el.style.fontStyle = 'italic';
+            if (p.align) el.style.justifyContent = { center: 'center', right: 'flex-end' }[p.align] || 'flex-start';
+            if (f.envx_type === 'mark') {
+                el.style.color = p.color || '#c92a2a';
+                el.style.justifyContent = 'center';
+                el.style.borderStyle = 'solid';
+            }
+            el.innerHTML = content(f, s);
+            pg.layer.append(el);
+        });
+    }
+
+    /** A click on a signer or on one of their events: show where their fields are on the document, and flash them. */
+    function showSigner(id) {
+        const els = [...document.querySelectorAll(`#es-pages .es-field[data-signer="${id}"]`)];
+        if (!els.length) return;
+        els[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        els.forEach((el) => {
+            el.classList.remove('es-need');
+            void el.offsetWidth;
+            el.classList.add('es-need');
+        });
     }
 
     async function replace(id) {
@@ -89,6 +178,14 @@
     $('es-signers').addEventListener('click', (e) => {
         const b = e.target.closest('[data-replace]');
         if (b) replace(b.dataset.replace);
+        else if (e.target.closest('tr[data-signer]')) showSigner(e.target.closest('tr[data-signer]').dataset.signer);
+    });
+    $('es-events').addEventListener('click', (e) => {
+        const li = e.target.closest('li[data-signer]');
+        if (!li) return;
+        // an event from before the envelope was reopened names a signer row that was made again since: find them by name
+        const now = D.signers.find((s) => String(s.envs_id) === li.dataset.signer) || D.signers.find((s) => s.envs_name === li.dataset.who && s.envs_status !== 'C');
+        if (now) showSigner(now.envs_id);
     });
     $('es-remind').addEventListener('click', async () => {
         const r = await Phai.api.post(`/api/envelopes/${nbr}/remind`);
@@ -109,5 +206,5 @@
     });
     render();
     // signers and the final document on the left, files and history on the right, the bar between them dragged
-    window.PhaiSplit.init(document.querySelector('.es-split'), 'view');
+    window.PhaiSplit.init(document.querySelector('.es-split'), 'view', () => renderDoc());
 })();
