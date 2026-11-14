@@ -198,12 +198,10 @@
         }
     });
     $('es-decline').addEventListener('click', async () => {
-        const note = window.prompt(T.decline_reason, '');
-        if (note === null) return;
-        if (!note.trim()) {
-            Phai.toast(T.reason_needed, 'warning');
-            return;
-        }
+        const note = await Phai.prompt(T.decline_reason, {
+            title: T.decline_title, placeholder: T.decline_hint, rows: 3, required: true, maxlength: 255, ok: T.decline, icon: 'circle-x',
+        });
+        if (!note) return;
         try {
             await Phai.api.post(`/api/envelopes/${nbr}/decline`, { note });
             location.href = `${base}/envelopes/${nbr}`;

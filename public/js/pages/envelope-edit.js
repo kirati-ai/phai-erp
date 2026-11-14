@@ -620,7 +620,8 @@
                 <div class="d-flex gap-1 mb-2">
                     <select class="form-select form-select-sm" id="es-del-where">${['all', 'not_this', 'not_first', 'custom'].map((k) => `<option value="${k}">${esc(T['del_' + k])}</option>`).join('')}</select>
                     <button type="button" class="btn btn-sm btn-ghost-danger" data-act="delfrom"><i class="ti ti-trash"></i></button>
-                </div>`;
+                </div>
+                <input class="form-control form-control-sm mb-2" id="es-del-custom" placeholder="${esc(T.pages_custom_hint)}" hidden>`;
             if (f.link) html += `<button type="button" class="btn btn-sm w-100 mb-2" data-act="unlink"><i class="ti ti-unlink me-1"></i>${esc(T.unlink)}</button>`;
         }
         html += `<div class="es-iconbar">
@@ -684,7 +685,7 @@
             changed();
         } else if (act === 'delfrom') {
             const where = $('es-del-where').value;
-            const pages = new Set(pagesFor(where, f.page, where === 'custom' ? window.prompt(T.pages_custom_hint, '') : ''));
+            const pages = new Set(pagesFor(where, f.page, $('es-del-custom').value));
             const gone = twins(f).filter((o) => pages.has(o.page));
             if (!gone.length) {
                 Phai.toast(T.no_pages, 'warning');
@@ -956,6 +957,10 @@
         const el = e.target;
         if (el.id === 'es-copy-where') {
             $('es-copy-custom').hidden = el.value !== 'custom';
+            return;
+        }
+        if (el.id === 'es-del-where') {
+            $('es-del-custom').hidden = el.value !== 'custom';
             return;
         }
         if (el.dataset.toggle) propToggle(el.dataset.toggle, el);

@@ -13,7 +13,7 @@
     function fill(id, rows, row, empty) {
         const body = document.querySelector(`#${id} tbody`);
         const cols = document.querySelectorAll(`#${id} thead th`).length;
-        body.innerHTML = rows.length ? rows.map(row).join('') : `<tr><td colspan="${cols}" class="text-secondary">${esc(empty)}</td></tr>`;
+        body.innerHTML = rows.length ? rows.map(row).join('') : `<tr><td colspan="${cols}" class="text-center text-secondary py-3">${esc(empty)}</td></tr>`;
         const count = document.querySelector(`[data-count="${id}"]`);
         if (count) count.textContent = rows.length || '';
     }
@@ -102,13 +102,40 @@
         }
     });
 
-    document.getElementById('es-new').addEventListener('click', async () => {
-        const title = window.prompt(T.new_title, '');
-        if (title === null || !title.trim()) return;
+    // A new envelope starts from the documents to sign: choose them first, then name it (the first file's name is offered),
+    // and the editor opens with them already in. Without a file chosen nothing is created.
+    const picker = $('es-new-files');
+    $('es-new').addEventListener('click', () => picker.click());
+    picker.addEventListener('change', async () => {
+        const list = [...picker.files];
+        picker.value = '';
+        if (!list.length) return;
+        const title = await Phai.prompt(tr(T.new_files, { names: list.map((f) => f.name).join(', ') }), {
+            title: T.new_title, value: list[0].name.replace(/\.[^.]+$/, ''), required: true, maxlength: 255, ok: T.new_create, icon: 'mail-plus',
+        });
+        if (!title) return;
+        const btn = $('es-new');
+        Phai.busy(btn, true);
         try {
-            const r = await Phai.api.post('/api/envelopes', { env_title: title.trim() });
+            const r = await Phai.api.post('/api/envelopes', { env_title: title });
+            for (const file of list) {
+                const data = await new Promise((resolve, reject) => {
+                    const fr = new FileReader();
+                    fr.onload = () => resolve(fr.result);
+                    fr.onerror = reject;
+                    fr.readAsDataURL(file);
+                });
+                Phai.toast(tr(T.uploading, { name: file.name }), 'info');
+                try {
+                    await Phai.api.post(`/api/envelopes/${r.nbr}/files`, { kind: 'M', name: file.name, data });
+                } catch (e) {
+                    // the envelope is there; the editor shows what came in, and a file can be added again from there
+                    if (e.fields) Phai.toast(`${file.name}: ${Object.values(e.fields)[0]}`, 'danger');
+                }
+            }
             location.href = `${base}/envelopes/${r.nbr}/edit`;
         } catch (e) {
+            Phai.busy(btn, false);
             if (e.fields) Phai.toast(Object.values(e.fields)[0], 'danger');
         }
     });

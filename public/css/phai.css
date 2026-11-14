@@ -1586,6 +1586,9 @@ table.phai-summary tr.phai-summary-grand td, #doc-totals.phai-summary .doc-grand
 }
 .phai-confirm-title { font-size: calc(1rem + 1px); font-weight: 600; margin-bottom: .25rem; }
 .phai-confirm-text { color: var(--tblr-secondary); white-space: pre-line; }
+/* the same dialog asking for an answer: a green pencil instead of the amber warning, the field left-aligned under the question */
+.phai-confirm-icon.phai-confirm-ask { color: #146637; background: radial-gradient(circle at 30% 30%, #f0faf3, #c9ebd4); box-shadow: 0 .5rem 1.25rem rgba(20, 102, 55, .25); }
+.phai-confirm-field { margin-top: 1rem; text-align: left; }
 .phai-confirm .modal-footer { justify-content: center; gap: .5rem; border-top: 0; padding-bottom: 1.25rem; }
 .phai-confirm .modal-footer .btn { min-width: 7rem; }
 @media (prefers-reduced-motion: no-preference) { #phai-confirm.show .phai-confirm-icon { animation: phai-wobble .6s ease .15s; } }

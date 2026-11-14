@@ -71,9 +71,11 @@
         people ??= await Phai.api.get('/api/envelopes/people');
         const s = D.signers.find((x) => String(x.envs_id) === String(id));
         const list = people.filter((p) => p.us_userid !== s.envs_userid);
-        const pick = window.prompt(tr(T.replace_prompt, { name: s.envs_name }) + '\n' + list.map((p) => `${p.us_userid} — ${p.us_name}`).join('\n'), '');
-        if (!pick) return;
-        const userid = pick.trim().split(/\s/)[0];
+        const userid = await Phai.prompt(tr(T.replace_prompt, { name: s.envs_name }), {
+            title: T.replace, options: list.map((p) => ({ value: p.us_userid, label: `${p.us_name} (${p.us_userid})` })),
+            placeholder: T.replace_pick, required: true, ok: T.replace, icon: 'user-share',
+        });
+        if (!userid) return;
         try {
             D = await Phai.api.post(`/api/envelopes/${nbr}/replace`, { signer: id, userid });
             render();

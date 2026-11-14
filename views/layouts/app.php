@@ -259,13 +259,14 @@ $company = \Phai\Core\App::db()->value('SELECT co_name FROM co_mstr WHERE co_id 
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content phai-confirm">
             <div class="modal-body">
-                <div class="phai-confirm-icon"><i class="ti ti-alert-triangle"></i></div>
-                <div class="phai-confirm-title"><?= e(t('common.confirm_title')) ?></div>
+                <div class="phai-confirm-icon" data-icon><i class="ti ti-alert-triangle"></i></div>
+                <div class="phai-confirm-title" data-title data-default="<?= e(t('common.confirm_title')) ?>"><?= e(t('common.confirm_title')) ?></div>
                 <div class="phai-confirm-text" data-message></div>
+                <div class="phai-confirm-field" data-field hidden></div>
             </div>
             <div class="modal-footer py-2">
                 <button type="button" class="btn btn-sm" data-bs-dismiss="modal"><i class="ti ti-x me-1"></i><?= e(t('common.cancel')) ?></button>
-                <button type="button" class="btn btn-sm btn-danger" data-ok><i class="ti ti-check me-1"></i><?= e(t('common.confirm')) ?></button>
+                <button type="button" class="btn btn-sm btn-danger" data-ok><i class="ti ti-check me-1"></i><span data-ok-text data-default="<?= e(t('common.confirm')) ?>"><?= e(t('common.confirm')) ?></span></button>
             </div>
         </div>
     </div>

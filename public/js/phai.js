@@ -5,6 +5,7 @@
  *   Phai.api.post('/api/uoms', {...})
  *   Phai.toast('บันทึกแล้ว')
  *   Phai.confirm('ลบ ?')                       -> Promise<boolean>
+ *   Phai.prompt('ชื่อ', {value: ''})            -> Promise<string|null>
  *   Phai.form.read(form) / fill(form, row) / errors(form, fields)
  *   Phai.grid({table, url, columns, search, onClick})
  */
@@ -179,25 +180,94 @@
         new bs.Toast(el, { delay: type === 'danger' || type === 'warning' ? 5000 : 2000 }).show();
     }
 
-    /** Small yes/no dialog. Use only for actions that cannot be undone. */
-    function confirmBox(message) {
+    /**
+     * The one standard dialog (#phai-confirm in the layout), dressed for a question or for an answer to type.
+     * Resolves true / false for a question, the text (or chosen value) / null for an answer.
+     */
+    function standardBox(message, o = {}) {
         const el = document.getElementById('phai-confirm');
-        if (!el || !bs) return Promise.resolve(window.confirm(message));
+        const asks = !!(o.input || o.options);
+        if (!el || !bs) {
+            if (!asks) return Promise.resolve(window.confirm(message));
+            const v = window.prompt(message, o.value ?? '');
+            return Promise.resolve(v === null ? null : v.trim());
+        }
+
+        const title = el.querySelector('[data-title]');
+        const okText = el.querySelector('[data-ok-text]');
+        const icon = el.querySelector('[data-icon]');
+        const field = el.querySelector('[data-field]');
+        const okBtn = el.querySelector('[data-ok]');
+        title.textContent = o.title || title.dataset.default;
+        okText.textContent = o.ok || okText.dataset.default;
+        icon.innerHTML = `<i class="ti ti-${esc(o.icon || (asks ? 'pencil' : 'alert-triangle'))}"></i>`;
+        icon.classList.toggle('phai-confirm-ask', asks);
+        okBtn.classList.toggle('btn-danger', !asks);
+        okBtn.classList.toggle('btn-primary', asks);
+        el.querySelector('[data-message]').textContent = message || '';
+
+        let box = null;
+        field.hidden = !asks;
+        field.innerHTML = '';
+        if (o.options) {
+            box = document.createElement('select');
+            box.className = 'form-select';
+            box.innerHTML = (o.placeholder ? `<option value="">${esc(o.placeholder)}</option>` : '')
+                + o.options.map((p) => `<option value="${esc(p.value)}">${esc(p.label)}</option>`).join('');
+            if (o.value != null) box.value = o.value;
+        } else if (o.input) {
+            box = document.createElement(o.rows ? 'textarea' : 'input');
+            box.className = 'form-control';
+            if (o.rows) box.rows = o.rows;
+            box.value = o.value ?? '';
+            box.placeholder = o.placeholder || '';
+            if (o.maxlength) box.maxLength = o.maxlength;
+        }
+        if (box) field.appendChild(box);
 
         return new Promise((resolve) => {
-            el.querySelector('[data-message]').textContent = message;
-            const okBtn = el.querySelector('[data-ok]');
             const modal = bs.Modal.getOrCreateInstance(el);
             let ok = false;
-            const onOk = () => { ok = true; modal.hide(); };
+            const onOk = () => {
+                if (box && o.required && !box.value.trim()) {
+                    box.classList.add('is-invalid');
+                    box.focus();
+                    return;
+                }
+                ok = true;
+                modal.hide();
+            };
+            // Enter in a one-line answer is the same as pressing OK
+            const onKey = (e) => { if (e.key === 'Enter' && box && box.tagName !== 'TEXTAREA') { e.preventDefault(); onOk(); } };
             okBtn.addEventListener('click', onOk);
-            el.addEventListener('shown.bs.modal', () => okBtn.focus(), { once: true });
+            el.addEventListener('keydown', onKey);
+            el.addEventListener('shown.bs.modal', () => {
+                if (!box) return okBtn.focus();
+                box.focus();
+                if (box.select) box.select();
+            }, { once: true });
             el.addEventListener('hidden.bs.modal', () => {
                 okBtn.removeEventListener('click', onOk);
-                resolve(ok);
+                el.removeEventListener('keydown', onKey);
+                if (!asks) resolve(ok);
+                else resolve(ok ? box.value.trim() : null);
             }, { once: true });
             modal.show();
         });
+    }
+
+    /** Small yes/no dialog. Use only for actions that cannot be undone. */
+    function confirmBox(message, o = {}) {
+        return standardBox(message, o);
+    }
+
+    /**
+     * Ask for one answer in the standard dialog, instead of the browser's prompt.
+     *   Phai.prompt('เหตุผล', {title, value, placeholder, required, rows, maxlength, ok, icon})  -> Promise<string|null>
+     *   Phai.prompt('เลือกผู้ใช้', {options: [{value, label}], placeholder, required})          -> chosen value or null
+     */
+    function promptBox(message, o = {}) {
+        return standardBox(message, { input: true, ...o });
     }
 
     /** Disable a button and show a spinner while waiting. */
@@ -1948,5 +2018,5 @@
         print.after(a);
     }
 
-    window.Phai = { viewFields, pick, api, ApiError, toast, confirm: confirmBox, busy, form, grid, geo, badge, stockShort, cancelButtons, esc, t, url, shrinkImage, month, files, signButton };
+    window.Phai = { viewFields, pick, api, ApiError, toast, confirm: confirmBox, prompt: promptBox, busy, form, grid, geo, badge, stockShort, cancelButtons, esc, t, url, shrinkImage, month, files, signButton };
 })();
