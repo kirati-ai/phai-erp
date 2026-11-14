@@ -3,7 +3,10 @@
  * documents. Everything is in points from the page's top left, as the page is shown; the screen draws it at
  * `scale` pixels per point. Changes save themselves (PUT /api/envelopes/{nbr}) a moment after the last one.
  *
- * Fields: a tool from the toolbox, then a click on a page. Select by clicking (Shift adds), or drag a box around
+ * Layout: a toolbar on top (documents, signers and the message in dialogs; Add signer opens a dialog that adds the
+ * person and places a block of their fields), and a format bar for what is selected; the pages take the full width.
+ *
+ * Fields: a tool from the toolbar, then a click on a page. Select by clicking (Shift adds), or drag a box around
  * them; drag to move, the corner to resize, arrows to nudge (Shift = 10 pt). Ctrl+C / V / D copy, paste, duplicate;
  * Ctrl+Z / Y undo, redo; Delete removes. The panel copies a field to other pages (all, all but the first...), as
  * linked copies that move together when wanted, and removes such copies again.
@@ -20,16 +23,49 @@
     const tr = (s, p = {}) => Object.entries(p).reduce((a, [k, v]) => a.replace(':' + k, v), s || '');
 
     const SIGNER_TYPES = ['signature', 'initials', 'name', 'position', 'date', 'timeline', 'stamp', 'text', 'checkbox'];
-    const SENDER_TYPES = ['label', 'mark'];
+    // what the sender places, owned by no signer; the company stamp is one of them (it belongs to the document)
+    const SENDER_TYPES = ['stamp', 'label', 'mark'];
     const SIZES = {
         signature: [150, 40], initials: [50, 30], name: [140, 16], position: [140, 16], date: [90, 16], timeline: [230, 14],
         stamp: [70, 70], text: [140, 18], checkbox: [14, 14], label: [160, 20], mark: [110, 30],
     };
     const ICONS = {
         signature: 'signature', initials: 'letter-case', name: 'user', position: 'id-badge-2', date: 'calendar', timeline: 'clock',
-        stamp: 'rosette', text: 'forms', checkbox: 'checkbox', label: 'typography', mark: 'stamp',
+        stamp: 'rosette', text: 'forms', checkbox: 'checkbox', label: 'typography', mark: 'rubber-stamp',
     };
     const TEXTY = ['label', 'mark', 'text', 'name', 'position', 'date', 'timeline'];
+    // Ready-made text boxes for the signer to fill in (what e-sign services offer as standard fields): the label is
+    // what the signer sees in the box, `input` the kind of answer the signing page asks for and the server checks.
+    const TEXT_BOXES = {
+        text: { icon: 'forms' },
+        email: { icon: 'mail', input: 'email', w: 160 },
+        tel: { icon: 'phone', input: 'tel', w: 110 },
+        company: { icon: 'building', w: 180 },
+        taxid: { icon: 'file-certificate', input: 'numeric', w: 120 },
+        address: { icon: 'map-pin', w: 230 },
+        amount: { icon: 'cash', input: 'number', w: 100 },
+        date: { icon: 'calendar-event', input: 'date', w: 90 },
+        note: { icon: 'note', w: 200 },
+    };
+    // fonts a field can use: only ones the final PDF can draw offline (bundled with PhaiERP, or on Phai Server)
+    // (handwriting ones: public/fonts/handwriting; the overlay that stamps the PDF loads the same files)
+    const FONT_NAMES = { plex: 'IBM Plex Sans Thai', noto: 'Noto Sans Thai', charm: 'Charm', charmonman: 'Charmonman', itim: 'Itim', mali: 'Mali', sriracha: 'Sriracha' };
+    const FONTS = Object.fromEntries(Object.entries(FONT_NAMES).map(([k, n]) => [k, `'${n}', 'IBM Plex Sans Thai', sans-serif`]));
+    // how a signing-date field shows the day; the same as Envelope::dateAs() on the server, which stamps the PDF
+    const DATE_FORMATS = ['th_short', 'th_long', 'num_be', 'num_ce', 'iso', 'en'];
+    function dateAs(d, fmt) {
+        const short = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+        const long = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+        const en = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const [day, m, y] = [d.getDate(), d.getMonth(), d.getFullYear()];
+        const two = (n) => String(n).padStart(2, '0');
+        return {
+            th_long: `${day} ${long[m]} ${y + 543}`, num_be: `${two(day)}/${two(m + 1)}/${y + 543}`, num_ce: `${two(day)}/${two(m + 1)}/${y}`,
+            iso: `${y}-${two(m + 1)}-${two(day)}`, en: `${day} ${en[m]} ${y}`,
+        }[fmt] || `${day} ${short[m]} ${y + 543}`;
+    }
+    // the field buttons on the toolbar, in this order; text boxes have their own menu beside them
+    const QUICK = ['signature', 'initials', 'name', 'position', 'date', 'timeline', 'checkbox'];
     const COLORS = ['#1d6fd8', '#d6336c', '#2f9e44', '#e8590c', '#7048e8', '#0c8599', '#c2255c', '#5c940d'];
     const GRID = 5;
     const MM = 72 / 25.4;
@@ -46,6 +82,7 @@
     let fields = D.fields.map(fromServer);
     let active = signers[0]?.key ?? null;
     let tool = null;
+    let preset = null; // which ready-made text box, when tool is 'text'
     let viewAs = '';
     let selected = new Set();
     let clipboard = [];
@@ -108,9 +145,12 @@
 
     let saveTimer = null;
     let saving = null;
+    let changes = 0; // counts changes, so a save that finishes knows whether newer ones are still waiting
     function save(now = false) {
         clearTimeout(saveTimer);
         $('es-saved').textContent = T.saving;
+        $('es-save').classList.add('es-dirty');
+        changes++;
         if (now) return flush();
         saveTimer = setTimeout(flush, 1200);
         return null;
@@ -118,6 +158,7 @@
     async function flush() {
         clearTimeout(saveTimer);
         if (saving) await saving.catch(() => {});
+        const upTo = changes;
         const body = {
             env_title: $('es-title').value, env_note: $('es-note').value,
             signers: signers.map((s) => ({ key: s.key, step: s.step, role: s.role, kind: s.kind, userid: s.userid, name: s.name, email: s.email, position: s.position, color: s.color })),
@@ -128,7 +169,11 @@
             const d = await saving;
             problems = d.problems || [];
             pageSizes = d.pages;
-            $('es-saved').textContent = tr(T.saved_at, { time: new Date().toTimeString().slice(0, 5) });
+            // the button stays tinted when something changed again while this was on its way
+            if (upTo === changes) {
+                $('es-saved').textContent = tr(T.saved_at, { time: new Date().toTimeString().slice(0, 5) });
+                $('es-save').classList.remove('es-dirty');
+            }
             renderProblems();
             return d;
         } catch (e) {
@@ -165,6 +210,7 @@
 
     function renderFiles() {
         const box = $('es-files');
+        $('es-files-n').textContent = files.length || '';
         if (!files.length) {
             box.innerHTML = `<div class="small text-secondary">${esc(T.no_files)}</div>`;
             return;
@@ -235,37 +281,25 @@
     function renderSigners() {
         const box = $('es-signers');
         signers.sort((a, b) => a.step - b.step);
+        $('es-signers-n').textContent = signers.length || '';
         if (!signers.length) {
             box.innerHTML = `<div class="small text-secondary">${esc(T.no_signers)}</div>`;
         } else {
+            // names in signing order, nothing to edit here: who they are was set when they were added; only the order
+            // changes (up / down), and a person can be taken out
             let step = 0;
+            const last = signers.length - 1;
             box.innerHTML = signers.map((s, i) => {
                 const head = s.step !== step ? `<div class="es-step">${esc(tr(T.step_n, { n: s.step }))}</div>` : '';
                 step = s.step;
-                const who = s.kind === 'U'
-                    ? `<select class="form-select form-select-sm" data-s="userid"><option value="">${esc(T.pick_user)}</option>${people.map((p) =>
-                        `<option value="${esc(p.us_userid)}"${p.us_userid === s.userid ? ' selected' : ''}>${esc(p.us_name || p.us_userid)}</option>`).join('')}</select>`
-                    : `<input class="form-control form-control-sm mb-1" data-s="name" placeholder="${esc(T.name)}" value="${esc(s.name)}">
-                       <input class="form-control form-control-sm" data-s="email" type="email" placeholder="${esc(T.email)}" value="${esc(s.email)}">
-                       <div class="small text-warning mt-1">${esc(T.outside_hint)}</div>`;
-                return `${head}<div class="es-signer${s.key === active ? ' es-active' : ''}" style="--es-c:${esc(s.color)}" data-key="${esc(s.key)}">
-                    <div class="row align-items-center">
-                        <div class="col-auto"><input class="form-check-input" type="radio" name="es-active" ${s.key === active ? 'checked' : ''} title="${esc(T.active_hint)}"></div>
-                        <div class="col">${who}</div>
-                    </div>
-                    <div class="row mt-1">
-                        <div class="col-7"><input class="form-control form-control-sm" data-s="position" placeholder="${esc(T.position)}" value="${esc(s.position)}"></div>
-                        <div class="col-5"><select class="form-select form-select-sm" data-s="role">${['S', 'A', 'C'].map((r) =>
-                            `<option value="${r}"${r === s.role ? ' selected' : ''}>${esc(T['role_' + r])}</option>`).join('')}</select></div>
-                    </div>
-                    <div class="d-flex align-items-center gap-1 mt-1">
-                        <span class="small text-secondary">${esc(T.step)}</span>
-                        <button type="button" class="btn btn-sm btn-ghost-secondary px-1" data-s="earlier" title="${esc(T.earlier)}"><i class="ti ti-arrow-up"></i></button>
-                        <b class="small">${s.step}</b>
-                        <button type="button" class="btn btn-sm btn-ghost-secondary px-1" data-s="later" title="${esc(T.later)}"><i class="ti ti-arrow-down"></i></button>
-                        <span class="ms-auto small text-secondary">${fields.filter((f) => f.signer === s.key).length} ${esc(T.fields_short)}</span>
-                        <button type="button" class="btn btn-sm btn-ghost-danger px-1" data-s="remove" title="${esc(T.remove)}"><i class="ti ti-x"></i></button>
-                    </div>
+                const about = [s.position, T['role_' + s.role], s.kind === 'E' ? T.who_outside : ''].filter(Boolean).join(' · ');
+                return `${head}<div class="es-signer es-srow${s.key === active ? ' es-active' : ''}" style="--es-c:${esc(s.color)}" data-key="${esc(s.key)}">
+                    <span class="es-dot"></span>
+                    <span class="es-sname"><b>${esc(s.name || T.signer)}</b> <small>${esc(about)}</small></span>
+                    <span class="small text-secondary text-nowrap">${fields.filter((f) => f.signer === s.key).length} ${esc(T.fields_short)}</span>
+                    <button type="button" class="btn btn-sm btn-ghost-secondary" data-s="earlier" title="${esc(T.earlier)}"${i === 0 && signers.filter((x) => x.step === s.step).length === 1 ? ' disabled' : ''}><i class="ti ti-arrow-up"></i></button>
+                    <button type="button" class="btn btn-sm btn-ghost-secondary" data-s="later" title="${esc(T.later)}"${i === last && signers.filter((x) => x.step === s.step).length === 1 ? ' disabled' : ''}><i class="ti ti-arrow-down"></i></button>
+                    <button type="button" class="btn btn-sm btn-ghost-danger" data-s="remove" title="${esc(T.remove)}"><i class="ti ti-x"></i></button>
                 </div>`;
             }).join('');
         }
@@ -273,36 +307,26 @@
         renderViewAs();
     }
 
-    function addSigner(kind) {
-        remember();
-        const used = new Set(signers.map((s) => s.color));
-        const step = signers.length ? Math.max(...signers.map((s) => s.step)) + 1 : 1;
-        const s = { key: newId(), step, role: 'S', kind, userid: null, name: '', email: '', position: '', color: COLORS.find((c) => !used.has(c)) || COLORS[signers.length % COLORS.length] };
-        signers.push(s);
-        active = s.key;
-        renderSigners();
-        save();
-    }
-
-    function signerInput(el) {
-        const row = el.closest('.es-signer');
-        const s = signer(row?.dataset.key);
-        if (!s) return;
-        const what = el.dataset.s;
-        if (['userid', 'name', 'email', 'position', 'role'].includes(what)) {
-            remember();
-            s[what] = el.value;
-            if (what === 'userid') {
-                const p = people.find((x) => x.us_userid === el.value);
-                s.name = p ? p.us_name || p.us_userid : '';
-                s.email = p?.us_email || '';
-            }
-            if (what === 'role') renderSigners();
-            renderToolHead();
-            renderViewAs();
-            renderFields();
-            save();
+    /**
+     * Up / down in the signing order. Alone in a step, the person swaps places with the step before / after; sharing
+     * a step (signing together), they leave it for a step of their own just before / after it.
+     */
+    function moveSigner(s, dir) {
+        const steps = [...new Set(signers.map((x) => x.step))].sort((a, b) => a - b);
+        if (signers.filter((x) => x.step === s.step).length === 1) {
+            const other = steps[steps.indexOf(s.step) + dir];
+            if (other === undefined) return false;
+            const mine = s.step;
+            signers.forEach((x) => { if (x.step === other) x.step = mine; });
+            s.step = other;
+        } else {
+            signers.forEach((x) => { if (x !== s && (dir < 0 ? x.step >= s.step : x.step > s.step)) x.step += 1; });
+            if (dir > 0) s.step += 1;
         }
+        // keep steps 1, 2, 3... without gaps
+        const now = [...new Set(signers.map((x) => x.step))].sort((a, b) => a - b);
+        signers.forEach((x) => { x.step = now.indexOf(x.step) + 1; });
+        return true;
     }
 
     async function signerButton(el) {
@@ -311,11 +335,10 @@
         if (!s) return;
         const what = el.dataset.s;
         if (what === 'earlier' || what === 'later') {
-            remember();
-            s.step = Math.max(1, Math.min(99, s.step + (what === 'earlier' ? -1 : 1)));
-            // keep steps 1, 2, 3... without gaps
-            const steps = [...new Set(signers.map((x) => x.step))].sort((a, b) => a - b);
-            signers.forEach((x) => { x.step = steps.indexOf(x.step) + 1; });
+            const before = snapshot();
+            if (!moveSigner(s, what === 'earlier' ? -1 : 1)) return;
+            undoStack.push(before);
+            redoStack.length = 0;
             renderSigners();
             save();
         } else if (what === 'remove') {
@@ -333,20 +356,30 @@
     // ------------------------------------------------------------------ toolbox
 
     function renderTools() {
-        $('es-tools-signer').innerHTML = SIGNER_TYPES.map((t) =>
-            `<button type="button" class="btn btn-sm" data-tool="${t}"><i class="ti ti-${ICONS[t]} me-1"></i>${esc(T['type_' + t])}</button>`).join('');
+        $('es-tools-signer').innerHTML = QUICK.map((t) =>
+            `<button type="button" class="btn btn-sm" data-tool="${t}" title="${esc(T['type_' + t])}" aria-label="${esc(T['type_' + t])}"><i class="ti ti-${ICONS[t]}"></i></button>`).join('');
+        $('es-tools-text').innerHTML = `<h6 class="dropdown-header">${esc(T.text_boxes)}</h6>` + Object.entries(TEXT_BOXES).map(([k, b]) =>
+            `<button type="button" class="dropdown-item" data-tool="text" data-preset="${k}"><i class="ti ti-${b.icon} me-2"></i>${esc(T['tb_' + k])}</button>`).join('');
         $('es-tools-sender').innerHTML = SENDER_TYPES.map((t) =>
-            `<button type="button" class="btn btn-sm" data-tool="${t}"><i class="ti ti-${ICONS[t]} me-1"></i>${esc(T['type_' + t])}</button>`).join('');
+            `<button type="button" class="btn btn-sm" data-tool="${t}" title="${esc(T['type_' + t])}" aria-label="${esc(T['type_' + t])}"><i class="ti ti-${ICONS[t]}"></i></button>`).join('');
         markTool();
     }
+    /** "Fields for": whose the next placed field is (not those who only acknowledge: they have none). */
     function renderToolHead() {
+        const can = signers.filter((s) => s.role !== 'C');
+        if (!can.some((s) => s.key === active)) active = can[0]?.key ?? null;
         const s = signer(active);
         $('es-active-dot').style.setProperty('--es-c', s?.color || '#888');
-        $('es-active-name').textContent = s ? (s.name || T.signer) : T.no_active;
-        document.querySelectorAll('#es-tools-signer [data-tool]').forEach((b) => { b.disabled = !s || s.role === 'C'; });
+        $('es-active').innerHTML = can.length
+            ? can.map((x) => `<option value="${esc(x.key)}"${x.key === active ? ' selected' : ''}>${esc(x.name || T.signer)}</option>`).join('')
+            : `<option value="">${esc(T.no_active)}</option>`;
+        $('es-active').disabled = !can.length;
+        document.querySelectorAll('#es-tools-signer [data-tool]').forEach((b) => { b.disabled = !s; });
+        $('es-add-text').disabled = !s;
     }
     function markTool() {
-        document.querySelectorAll('[data-tool]').forEach((b) => b.classList.toggle('active', b.dataset.tool === tool));
+        document.querySelectorAll('[data-tool]').forEach((b) => b.classList.toggle('active', b.dataset.tool === tool && (b.dataset.preset || null) === (tool === 'text' ? preset : null)));
+        $('es-add-text').classList.toggle('active', tool === 'text');
         view?.list.forEach((p) => p.layer.classList.toggle('es-placing', !!tool));
     }
     function renderViewAs() {
@@ -387,6 +420,8 @@
         if (f.type === 'name' && s?.name) return s.name;
         if (f.type === 'position' && s?.position) return s.position;
         if (f.type === 'checkbox') return '';
+        if (f.type === 'text' && f.props.label) return f.props.label + (s?.name ? ' · ' + s.name : '');
+        if (f.type === 'date') return dateAs(new Date(), f.props.datefmt) + (s?.name ? ' · ' + s.name : '');
         return T['type_' + f.type] + (s?.name ? ' · ' + s.name : '');
     }
 
@@ -416,6 +451,8 @@
             if (TEXTY.includes(f.type)) {
                 el.style.fontWeight = f.props.bold ? '700' : '';
                 el.style.fontStyle = f.props.italic ? 'italic' : '';
+                el.style.textDecoration = f.props.underline ? 'underline' : '';
+                el.style.fontFamily = FONTS[f.props.font] || '';
                 el.style.justifyContent = { center: 'center', right: 'flex-end' }[f.props.align] || (f.type === 'mark' ? 'center' : 'flex-start');
             }
             el.innerHTML = `<span class="es-lbl">${esc(label(f))}</span><span class="es-h"></span>${f.link ? '<i class="ti ti-link es-link"></i>' : ''}`;
@@ -441,17 +478,20 @@
             return;
         }
         remember();
-        const [w, h] = SIZES[type];
+        const box = type === 'text' && preset && preset !== 'text' ? TEXT_BOXES[preset] : null;
+        const [w, h] = box?.w ? [box.w, SIZES.text[1]] : SIZES[type];
         const f = clamp({
             id: newId(), signer: isSender ? null : s.key, page: p.n, type, x: snap(x - w / 2), y: snap(y - h / 2), w, h,
             props: type === 'mark' ? { text: (T.marks || '').split('|')[0], color: '#c92a2a', bold: true, size: 12 }
                 : type === 'label' ? { text: T.type_label, size: 10 }
+                : box ? { label: T['tb_' + preset], ...(box.input ? { input: box.input } : {}) }
                 : ['signature', 'initials'].includes(type) ? { required: true } : {},
             link: null,
         });
         fields.push(f);
         selected = new Set([f.id]);
         tool = null;
+        preset = null;
         markTool();
         changed();
     }
@@ -556,80 +596,99 @@
     const sel = () => [...selected].map(field).filter(Boolean);
     const mm = (pt) => (pt / MM).toFixed(1);
 
+    /**
+     * The format bar under the toolbar, shown while something is selected: font, alignment, position and size,
+     * copy to / remove from other pages, then duplicate, lock and delete. Small panels open as dropdowns; one that
+     * was open stays open when the bar is drawn again after a change.
+     */
     function renderProps() {
         const box = $('es-props');
+        const open = box.querySelector('.dropdown-menu.show')?.dataset.dd;
         const list = sel();
+        // the bar keeps its place when nothing is selected, so the pages under it do not jump
         if (!list.length) {
-            box.innerHTML = `<h4>${esc(T.selection)}</h4><div class="small text-secondary">${esc(T.select_hint)}</div>`;
+            box.innerHTML = `<span class="es-hint"><i class="ti ti-pointer me-1"></i>${esc(T.format_hint)}</span>`;
             return;
         }
         const f = list[0];
         const one = list.length === 1;
-        const isSignerField = SIGNER_TYPES.includes(f.type);
-        const p = f.props;
-        let html = `<h4>${esc(one ? T['type_' + f.type] : tr(T.n_selected, { n: list.length }))} <span class="small text-secondary">· ${esc(tr(T.page_n, { n: f.page }))}</span></h4>`;
-        if (one && isSignerField) {
-            html += `<label>${esc(T.signer)}</label><select class="form-select form-select-sm mb-2" data-p="signer">${signers.filter((s) => s.role !== 'C').map((s) =>
+        // font and alignment come from the first text-like field, so a selected block (signature + name...) gets them too
+        const tf = list.find((x) => TEXTY.includes(x.type));
+        const p = (tf || f).props;
+        const btn =(attr, icon, title, on = false, extra = '') => `<button type="button" class="btn btn-sm${on ? ' active' : ''}${extra}" ${attr} title="${esc(title)}"><i class="ti ti-${icon}"></i></button>`;
+        const dd = (name, icon, label, body, end = false) => `<div class="dropdown">
+                <button type="button" class="btn btn-sm" data-bs-toggle="dropdown" data-bs-auto-close="outside" title="${esc(label)}" aria-label="${esc(label)}"><i class="ti ti-${icon}"></i></button>
+                <div class="dropdown-menu ${end ? 'dropdown-menu-end ' : ''}p-2 es-menu" data-dd="${name}">${body}</div>
+            </div>`;
+        const sep = '<span class="es-sep"></span>';
+
+        let html = `<span class="es-what">${esc(one ? T['type_' + f.type] : tr(T.n_selected, { n: list.length }))} <small>· ${esc(tr(T.page_n, { n: f.page }))}</small></span>`;
+        if (one && f.signer !== null) {
+            html += `<select class="form-select form-select-sm w-auto" data-p="signer" title="${esc(T.signer)}">${signers.filter((s) => s.role !== 'C').map((s) =>
                 `<option value="${esc(s.key)}"${s.key === f.signer ? ' selected' : ''}>${esc(s.name || T.signer)}</option>`).join('')}</select>`;
         }
-        if (one) {
-            html += `<div class="row mb-2">${['x', 'y', 'w', 'h'].map((k) =>
-                `<div class="col-3"><label>${esc(T['geo_' + k])}</label><input class="form-control form-control-sm px-1" type="number" step="0.5" data-geo="${k}" value="${mm(f[k])}"></div>`).join('')}</div>`;
-        }
         if (one && (f.type === 'label' || f.type === 'mark')) {
-            if (f.type === 'mark') {
-                html += `<label>${esc(T.mark_preset)}</label><select class="form-select form-select-sm mb-1" data-p="preset"><option value="">—</option>${(T.marks || '').split('|').map((m) =>
-                    `<option${m === p.text ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select>`;
-            }
-            html += `<label>${esc(T.text)}</label><textarea class="form-control form-control-sm mb-2" rows="2" data-p="text">${esc(p.text || '')}</textarea>`;
+            html += dd('text', 'pencil', T.text, `${f.type === 'mark' ? `<label>${esc(T.mark_preset)}</label><select class="form-select form-select-sm mb-2" data-p="preset"><option value="">—</option>${(T.marks || '').split('|').map((m) =>
+                `<option${m === p.text ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select>` : ''}
+                <label>${esc(T.text)}</label><textarea class="form-control form-control-sm" rows="3" data-p="text">${esc(p.text || '')}</textarea>`);
         }
-        if (TEXTY.includes(f.type)) {
-            html += `<div class="row mb-2 align-items-end">
-                <div class="col-4"><label>${esc(T.font_size)}</label><input class="form-control form-control-sm px-1" type="number" min="5" max="72" step="0.5" data-p="size" value="${p.size || (f.type === 'mark' ? 12 : 10)}"></div>
-                <div class="col-8"><div class="es-iconbar">
-                    <button type="button" class="btn btn-sm${p.bold ? ' active' : ''}" data-toggle="bold" title="${esc(T.bold)}"><i class="ti ti-bold"></i></button>
-                    <button type="button" class="btn btn-sm${p.italic ? ' active' : ''}" data-toggle="italic" title="${esc(T.italic)}"><i class="ti ti-italic"></i></button>
-                    <button type="button" class="btn btn-sm${p.underline ? ' active' : ''}" data-toggle="underline" title="${esc(T.underline)}"><i class="ti ti-underline"></i></button>
-                    <input type="color" class="form-control form-control-sm form-control-color p-0" style="width:1.8rem;height:1.6rem" data-p="color" value="${esc(p.color || (f.type === 'mark' ? '#c92a2a' : '#111111'))}" title="${esc(T.color)}">
-                </div></div>
-            </div>
-            <div class="es-iconbar mb-2">${['left', 'center', 'right'].map((a) =>
-                `<button type="button" class="btn btn-sm${(p.align || 'left') === a ? ' active' : ''}" data-align="${a}" title="${esc(T['align_' + a])}"><i class="ti ti-align-${a}"></i></button>`).join('')}</div>`;
+        if (one && f.type === 'text') {
+            const kinds = { '': T.tb_text, email: T.tb_email, tel: T.tb_tel, number: T.tb_amount, numeric: T.tb_taxid, date: T.tb_date };
+            html += dd('label', 'pencil', T.field_label, `<label>${esc(T.field_label)}</label><input class="form-control form-control-sm mb-2" maxlength="100" data-p="label" value="${esc(f.props.label || '')}">
+                <label>${esc(T.text_boxes)}</label><select class="form-select form-select-sm" data-p="input">${Object.entries(kinds).map(([k, v]) =>
+                    `<option value="${k}"${(f.props.input || '') === k ? ' selected' : ''}>${esc(v)}</option>`).join('')}</select>`);
         }
-        if (['text', 'checkbox', 'signature', 'initials'].includes(f.type)) {
-            html += `<div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="es-req" data-toggle="required"${p.required ? ' checked' : ''}><label class="form-check-label small" for="es-req">${esc(T.required)}</label></div>`;
+        if (list.every((x) => x.type === 'date')) {
+            const now = new Date();
+            html += `<select class="form-select form-select-sm w-auto" data-p="datefmt" title="${esc(T.date_format)}">${DATE_FORMATS.map((k) =>
+                `<option value="${k}"${(f.props.datefmt || 'th_short') === k ? ' selected' : ''}>${esc(dateAs(now, k))}</option>`).join('')}</select>`;
         }
-        if (list.length > 1) {
-            html += `<label>${esc(T.arrange)}</label><div class="es-iconbar mb-2">
-                ${[['left', 'layout-align-left'], ['center', 'layout-align-center'], ['right', 'layout-align-right'], ['top', 'layout-align-top'], ['middle', 'layout-align-middle'], ['bottom', 'layout-align-bottom']].map(([k, i]) =>
-                    `<button type="button" class="btn btn-sm" data-arrange="${k}" title="${esc(T['arr_' + k])}"><i class="ti ti-${i}"></i></button>`).join('')}
-                <button type="button" class="btn btn-sm" data-arrange="hspace" title="${esc(T.arr_hspace)}"><i class="ti ti-layout-distribute-vertical"></i></button>
-                <button type="button" class="btn btn-sm" data-arrange="vspace" title="${esc(T.arr_vspace)}"><i class="ti ti-layout-distribute-horizontal"></i></button>
-                <button type="button" class="btn btn-sm" data-arrange="size" title="${esc(T.arr_size)}"><i class="ti ti-dimensions"></i></button>
-            </div>`;
+        if (tf) {
+            const mark = tf.type === 'mark';
+            html += sep + `<select class="form-select form-select-sm w-auto" data-p="font" title="${esc(T.font)}">${Object.keys(FONTS).map((k) =>
+                    `<option value="${k}"${(p.font || 'plex') === k ? ' selected' : ''} style="font-family:${esc(FONTS[k])}">${esc(FONT_NAMES[k])}</option>`).join('')}</select>`
+                + `<input class="form-control form-control-sm es-size" type="number" min="5" max="72" step="0.5" data-p="size" value="${p.size || (mark ? 12 : 10)}" title="${esc(T.font_size)}">`
+                + btn('data-size="-1"', 'text-decrease', T.font_smaller) + btn('data-size="1"', 'text-increase', T.font_bigger)
+                + btn('data-toggle="bold"', 'bold', T.bold, p.bold) + btn('data-toggle="italic"', 'italic', T.italic, p.italic) + btn('data-toggle="underline"', 'underline', T.underline, p.underline)
+                + `<input type="color" class="form-control form-control-color" data-p="color" value="${esc(p.color || (mark ? '#c92a2a' : '#111111'))}" title="${esc(T.color)}">`
+                + sep + ['left', 'center', 'right'].map((a) => btn(`data-align="${a}"`, `align-${a}`, T['align_' + a], (p.align || (mark ? 'center' : 'left')) === a)).join('');
         }
+        if (list.some((x) => ['text', 'checkbox', 'signature', 'initials'].includes(x.type))) {
+            html += sep + btn('data-toggle="required"', 'asterisk', T.required, list.every((x) => x.props.required));
+        }
+        // Arrange: to each other when several are selected (align, spread, same size), to the page always, and in front / behind
+        const many = list.length > 1;
+        const arr = (k, i) => btn(`data-arrange="${k}"`, i, T['arr_' + k]);
+        html += sep + (many ? arr('left', 'layout-align-left') + arr('center', 'layout-align-center') + arr('top', 'layout-align-top') : '')
+            + dd('arr', 'layout-board', T.arrange_menu, `${many ? `<h6 class="dropdown-header">${esc(T.arr_selection)}</h6>
+                <div class="es-arr mb-2">${arr('left', 'layout-align-left')}${arr('center', 'layout-align-center')}${arr('right', 'layout-align-right')}${arr('top', 'layout-align-top')}${arr('middle', 'layout-align-middle')}${arr('bottom', 'layout-align-bottom')}
+                    ${arr('hspace', 'layout-distribute-vertical')}${arr('vspace', 'layout-distribute-horizontal')}${arr('width', 'arrows-horizontal')}${arr('height', 'arrows-vertical')}${arr('size', 'dimensions')}</div>` : ''}
+                <h6 class="dropdown-header">${esc(T.arr_page)}</h6>
+                <div class="es-arr mb-2">${arr('page_center', 'layout-align-center')}${arr('page_middle', 'layout-align-middle')}</div>
+                <div class="es-arr">${arr('front', 'stack-front')}${arr('back', 'stack-back')}</div>`);
+        html += sep;
         if (one) {
-            html += `<label>${esc(T.copy_to)}</label>
-                <div class="d-flex gap-1 mb-1">
-                    <select class="form-select form-select-sm" id="es-copy-where">${['all', 'not_first', 'not_last', 'odd', 'even', 'custom'].map((k) => `<option value="${k}">${esc(T['pages_' + k])}</option>`).join('')}</select>
-                    <button type="button" class="btn btn-sm" data-act="copy"><i class="ti ti-copy"></i></button>
-                </div>
+            html += dd('geo', 'ruler-measure', T.geo, `<div class="row">${['x', 'y', 'w', 'h'].map((k) =>
+                `<div class="col-6"><label>${esc(T['geo_' + k])}</label><input class="form-control form-control-sm" type="number" step="0.5" data-geo="${k}" value="${mm(f[k])}"></div>`).join('')}</div>`);
+            html += dd('copy', 'copy', T.copy_to, `<select class="form-select form-select-sm mb-1" id="es-copy-where">${['all', 'not_first', 'not_last', 'odd', 'even', 'custom'].map((k) => `<option value="${k}">${esc(T['pages_' + k])}</option>`).join('')}</select>
                 <input class="form-control form-control-sm mb-1" id="es-copy-custom" placeholder="${esc(T.pages_custom_hint)}" hidden>
                 <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="es-copy-link" checked><label class="form-check-label small" for="es-copy-link">${esc(T.linked)}</label></div>
-                <label>${esc(T.delete_from)}</label>
-                <div class="d-flex gap-1 mb-2">
-                    <select class="form-select form-select-sm" id="es-del-where">${['all', 'not_this', 'not_first', 'custom'].map((k) => `<option value="${k}">${esc(T['del_' + k])}</option>`).join('')}</select>
-                    <button type="button" class="btn btn-sm btn-ghost-danger" data-act="delfrom"><i class="ti ti-trash"></i></button>
-                </div>
-                <input class="form-control form-control-sm mb-2" id="es-del-custom" placeholder="${esc(T.pages_custom_hint)}" hidden>`;
-            if (f.link) html += `<button type="button" class="btn btn-sm w-100 mb-2" data-act="unlink"><i class="ti ti-unlink me-1"></i>${esc(T.unlink)}</button>`;
+                <button type="button" class="btn btn-sm btn-primary w-100" data-act="copy"><i class="ti ti-copy me-1"></i>${esc(T.copy_go)}</button>`);
+            html += dd('del', 'trash-x', T.delete_from, `<select class="form-select form-select-sm mb-1" id="es-del-where">${['all', 'not_this', 'not_first', 'custom'].map((k) => `<option value="${k}">${esc(T['del_' + k])}</option>`).join('')}</select>
+                <input class="form-control form-control-sm mb-1" id="es-del-custom" placeholder="${esc(T.pages_custom_hint)}" hidden>
+                <button type="button" class="btn btn-sm btn-danger w-100 mt-1" data-act="delfrom"><i class="ti ti-trash me-1"></i>${esc(T.del_go)}</button>`);
+            if (f.link) html += btn('data-act="unlink"', 'unlink', T.unlink);
         }
-        html += `<div class="es-iconbar">
-            <button type="button" class="btn btn-sm" data-act="duplicate" title="${esc(T.duplicate)} (Ctrl+D)"><i class="ti ti-copy-plus"></i></button>
-            <button type="button" class="btn btn-sm${list.every((x) => x.props.locked) ? ' active' : ''}" data-act="lock" title="${esc(T.lock)}"><i class="ti ti-lock"></i></button>
-            <button type="button" class="btn btn-sm btn-ghost-danger ms-auto" data-act="delete" title="${esc(T.remove)} (Delete)"><i class="ti ti-trash me-1"></i>${esc(T.remove)}</button>
-        </div>`;
+        html += '<span class="es-grow"></span>'
+            + btn('data-act="duplicate"', 'copy-plus', `${T.duplicate} (Ctrl+D)`)
+            + btn('data-act="lock"', 'lock', T.lock, list.every((x) => x.props.locked))
+            + btn('data-act="delete"', 'trash', `${T.remove} (Delete)`, false, ' btn-ghost-danger');
         box.innerHTML = html;
+        if (open) {
+            const menu = box.querySelector(`[data-dd="${open}"]`);
+            const bs = window.bootstrap || window.tabler;
+            if (menu && bs?.Dropdown) bs.Dropdown.getOrCreateInstance(menu.previousElementSibling).show();
+        }
     }
 
     function renderGeometry() {
@@ -715,6 +774,26 @@
 
     function arrange(how) {
         const list = sel();
+        if (!list.length) return;
+        // to the page, and in front / behind: work on one field as well as on several
+        if (['page_center', 'page_middle', 'front', 'back'].includes(how)) {
+            remember();
+            if (how === 'front' || how === 'back') {
+                const ids = new Set(list.map((f) => f.id));
+                const rest = fields.filter((f) => !ids.has(f.id));
+                fields = how === 'front' ? [...rest, ...list] : [...list, ...rest];
+            } else {
+                // the selection moves as one group, so a signature block stays together
+                const [pw, ph] = pageSize(list[0].page);
+                const minX = Math.min(...list.map((f) => f.x));
+                const minY = Math.min(...list.map((f) => f.y));
+                const dx = how === 'page_center' ? (pw - (Math.max(...list.map((f) => f.x + f.w)) - minX)) / 2 - minX : 0;
+                const dy = how === 'page_middle' ? (ph - (Math.max(...list.map((f) => f.y + f.h)) - minY)) / 2 - minY : 0;
+                list.forEach((f) => { f.x += dx; f.y += dy; clamp(f); });
+            }
+            changed();
+            return;
+        }
         if (list.length < 2) return;
         remember();
         const first = list[0];
@@ -729,10 +808,8 @@
             if (how === 'top') f.y = minY;
             if (how === 'bottom') f.y = maxY - f.h;
             if (how === 'middle') f.y = (minY + maxY) / 2 - f.h / 2;
-            if (how === 'size') {
-                f.w = first.w;
-                f.h = first.h;
-            }
+            if (how === 'size' || how === 'width') f.w = first.w;
+            if (how === 'size' || how === 'height') f.h = first.h;
             clamp(f);
         });
         if (how === 'hspace' || how === 'vspace') {
@@ -884,6 +961,9 @@
 
     function renderProblems() {
         const list = [...problems.map((p) => ['danger', p]), ...warnings().map((w) => ['warning', w])];
+        const n = $('es-check-n');
+        n.textContent = list.length || '✓';
+        n.className = `badge ms-1 ${problems.length ? 'bg-red-lt' : list.length ? 'bg-orange-lt' : 'bg-green-lt'}`;
         $('es-problems').innerHTML = list.length
             ? list.map(([c, m]) => `<li class="text-${c}">${esc(m)}</li>`).join('')
             : `<li class="text-success list-unstyled ms-n3"><i class="ti ti-circle-check me-1"></i>${esc(T.ready)}</li>`;
@@ -897,12 +977,157 @@
         }
         if (problems.length) {
             Phai.toast(problems[0], 'danger');
+            const bs = window.bootstrap || window.tabler;
+            if (bs?.Dropdown) bs.Dropdown.getOrCreateInstance($('es-check-btn')).show();
             return;
         }
         const first = signers.filter((s) => s.role !== 'C').sort((a, b) => a.step - b.step)[0];
         if (!(await Phai.confirm(tr(T.send_confirm, { name: first?.name || '' })))) return;
         await Phai.api.post(`/api/envelopes/${nbr}/send`);
         location.href = `${base}/envelopes/${nbr}`;
+    }
+
+    // ------------------------------------------------------------------ add a signer with a block of fields
+
+    // What a new signer can get on the page, in the order the block stacks them; the first four are ticked at first,
+    // after that whatever was ticked last time in this browser.
+    const BLOCK = ['signature', 'name', 'position', 'date', 'initials', 'timeline', 'checkbox'];
+    const BLOCK_KEY = 'phai-esign-block';
+    let addModal = null;
+
+    function lastChoice() {
+        try {
+            const v = JSON.parse(localStorage.getItem(BLOCK_KEY) || 'null');
+            if (Array.isArray(v) && v.length) return v;
+        } catch (_) { /* first time, or storage off */ }
+        return ['signature', 'name', 'position', 'date'];
+    }
+
+    function addKind() {
+        return document.querySelector('input[name="es-add-kind"]:checked').value;
+    }
+    function addShow() {
+        const kind = addKind();
+        document.querySelectorAll('[data-kind-only]').forEach((el) => { el.hidden = el.dataset.kindOnly !== kind; });
+        const cc = $('es-add-role').value === 'C';
+        $('es-add-fields-box').hidden = cc;
+        $('es-add-cc').hidden = !cc;
+    }
+
+    function openAddSign() {
+        if (!files.some((f) => f.envf_kind === 'M')) {
+            Phai.toast(T.empty_add_sign, 'warning');
+            return;
+        }
+        const bs = window.bootstrap || window.tabler;
+        bs.Modal.getInstance($('es-signers-modal'))?.hide();
+        $('es-add-u').checked = true;
+        const taken = new Set(signers.map((s) => s.userid).filter(Boolean));
+        $('es-add-user').innerHTML = `<option value="">${esc(T.pick_user)}</option>` + people.filter((p) => !taken.has(p.us_userid)).map((p) =>
+            `<option value="${esc(p.us_userid)}">${esc(p.us_name || p.us_userid)}${p.us_email ? ' · ' + esc(p.us_email) : ''}</option>`).join('');
+        ['es-add-name', 'es-add-email', 'es-add-position'].forEach((id) => { $(id).value = ''; $(id).classList.remove('is-invalid'); });
+        $('es-add-user').classList.remove('is-invalid');
+        $('es-add-role').value = 'S';
+        const steps = [...new Set(signers.map((s) => s.step))].sort((a, b) => a - b);
+        const next = steps.length ? steps[steps.length - 1] + 1 : 1;
+        $('es-add-step').innerHTML = `<option value="${next}">${esc(tr(T.step_new, { n: next }))}</option>`
+            + steps.map((n) => `<option value="${n}">${esc(tr(T.step_with, { n }))}</option>`).join('');
+        const on = new Set(lastChoice());
+        $('es-add-fields').innerHTML = BLOCK.map((t) => `<label class="form-check"><input class="form-check-input" type="checkbox" value="${t}"${on.has(t) ? ' checked' : ''}>
+            <span class="form-check-label"><i class="ti ti-${ICONS[t]} me-1"></i>${esc(T['type_' + t])}</span></label>`).join('');
+        const n = pageSizes.length;
+        $('es-add-page').innerHTML = Array.from({ length: n }, (_, i) => i + 1).reverse().map((p) =>
+            `<option value="${p}">${esc(p === n ? tr(T.page_last, { n }) : tr(T.page_n, { n: p }))}</option>`).join('');
+        addShow();
+        addModal ??= bs.Modal.getOrCreateInstance($('es-add-modal'));
+        addModal.show();
+    }
+
+    /** A free place for a block w × h on the page: along the bottom first, left to right, then rows above. */
+    function freeSpot(page, w, h) {
+        const [pw, ph] = pageSize(page);
+        const m = 36;
+        const busy = fields.filter((f) => f.page === page);
+        for (let row = 0; row < 8; row++) {
+            const y = ph - m - h - row * (h + 16);
+            if (y < m) break;
+            for (let x = m; x + w <= pw - m; x += w + 20) {
+                if (!busy.some((f) => f.x < x + w + 4 && x < f.x + f.w + 4 && f.y < y + h + 4 && y < f.y + f.h + 4)) return { x: snap(x), y: snap(y) };
+            }
+        }
+        return { x: snap((pw - w) / 2), y: snap((ph - h) / 2) };
+    }
+
+    /** The fields of one signer's block, stacked and centred: the signature, then name, position and date under it. */
+    function block(types, key, page) {
+        const items = types.map((t) => {
+            const [w, h] = SIZES[t];
+            return { t, w: t === 'signature' || (TEXTY.includes(t) && t !== 'timeline') ? 170 : w, h };
+        });
+        const width = Math.max(...items.map((i) => i.w));
+        const height = items.reduce((a, i) => a + i.h, 0) + 3 * (items.length - 1);
+        const at = freeSpot(page, width, height);
+        let y = at.y;
+        return items.map((i) => {
+            const f = clamp({
+                id: newId(), signer: key, page, type: i.t, x: at.x + (width - i.w) / 2, y, w: i.w, h: i.h,
+                props: ['signature', 'initials'].includes(i.t) ? { required: true } : TEXTY.includes(i.t) ? { align: 'center' } : {}, link: null,
+            });
+            y += i.h + 3;
+            return f;
+        });
+    }
+
+    function createSigner(e) {
+        e.preventDefault();
+        const kind = addKind();
+        let userid = null;
+        let name;
+        let email;
+        if (kind === 'U') {
+            userid = $('es-add-user').value;
+            if (!userid) {
+                $('es-add-user').classList.add('is-invalid');
+                return;
+            }
+            const p = people.find((x) => x.us_userid === userid);
+            name = p?.us_name || userid;
+            email = p?.us_email || '';
+        } else {
+            name = $('es-add-name').value.trim();
+            email = $('es-add-email').value.trim();
+            $('es-add-name').classList.toggle('is-invalid', !name);
+            $('es-add-email').classList.toggle('is-invalid', !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email));
+            if (!name || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+                Phai.toast(T.need_outsider, 'warning');
+                return;
+            }
+        }
+        const role = $('es-add-role').value;
+        const types = role === 'C' ? [] : [...$('es-add-fields').querySelectorAll('input:checked')].map((i) => i.value);
+        if (types.length) {
+            try { localStorage.setItem(BLOCK_KEY, JSON.stringify(types)); } catch (_) { /* storage off */ }
+        }
+        remember();
+        const used = new Set(signers.map((s) => s.color));
+        const s = {
+            key: newId(), step: +$('es-add-step').value, role, kind, userid, name, email, position: $('es-add-position').value.trim(),
+            color: COLORS.find((c) => !used.has(c)) || COLORS[signers.length % COLORS.length],
+        };
+        signers.push(s);
+        const page = +$('es-add-page').value;
+        const added = types.length ? block(types, s.key, page) : [];
+        fields.push(...added);
+        if (role !== 'C') active = s.key;
+        selected = new Set(added.map((f) => f.id));
+        renderAll();
+        save();
+        // show where the block went, once the dialog is gone (closing it puts the focus back on the button above)
+        $('es-add-modal').addEventListener('hidden.bs.modal', () => {
+            const first = added[0] && view?.list[page - 1]?.layer.querySelector(`.es-field[data-id="${added[0].id}"]`);
+            first?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, { once: true });
+        addModal.hide();
     }
 
     // ------------------------------------------------------------------ wiring
@@ -924,27 +1149,41 @@
         const b = e.target.closest('[data-file]');
         if (b) fileAction(b.closest('.es-file').dataset.id, b.dataset.file);
     });
-    $('es-add-signer').addEventListener('click', () => addSigner('U'));
-    $('es-add-outside').addEventListener('click', () => addSigner('E'));
-    $('es-signers').addEventListener('change', (e) => {
-        if (e.target.name === 'es-active') {
-            active = e.target.closest('.es-signer').dataset.key;
-            renderSigners();
-        } else if (e.target.dataset.s) signerInput(e.target);
+    $('es-add-sign').addEventListener('click', openAddSign);
+    document.querySelector('[data-add-sign]').addEventListener('click', openAddSign);
+    $('es-add-form').addEventListener('submit', createSigner);
+    document.querySelectorAll('input[name="es-add-kind"]').forEach((r) => r.addEventListener('change', addShow));
+    $('es-add-role').addEventListener('change', addShow);
+    $('es-add-user').addEventListener('change', (e) => e.target.classList.remove('is-invalid'));
+    $('es-active').addEventListener('change', (e) => {
+        active = e.target.value;
+        renderSigners();
     });
+    const noteDot = () => { $('es-note-dot').hidden = !$('es-note').value.trim(); };
+    $('es-note').addEventListener('input', noteDot);
+    noteDot();
     $('es-signers').addEventListener('click', (e) => {
         const b = e.target.closest('button[data-s]');
         if (b) signerButton(b);
-        else if (e.target.closest('.es-signer') && !e.target.closest('input,select,button')) {
-            active = e.target.closest('.es-signer').dataset.key;
+        else if (e.target.closest('.es-signer')) {
+            // a click on a name makes new fields theirs (unless they only acknowledge)
+            const s = signer(e.target.closest('.es-signer').dataset.key);
+            if (s && s.role !== 'C') active = s.key;
             renderSigners();
         }
     });
     document.querySelectorAll('.es-tools').forEach((box) => box.addEventListener('click', (e) => {
         const b = e.target.closest('[data-tool]');
         if (!b) return;
-        tool = tool === b.dataset.tool ? null : b.dataset.tool;
+        if (SIGNER_TYPES.includes(b.dataset.tool) && !signer(active)) {
+            Phai.toast(T.need_active, 'warning');
+            return;
+        }
+        const again = tool === b.dataset.tool && preset === (b.dataset.preset || null);
+        tool = again ? null : b.dataset.tool;
+        preset = again ? null : (b.dataset.preset || null);
         markTool();
+        if (tool) Phai.toast(tr(T.place_hint, { type: preset ? T['tb_' + preset] : T['type_' + tool] }), 'info');
     }));
     $('es-view').addEventListener('change', (e) => {
         viewAs = e.target.value;
@@ -967,16 +1206,17 @@
         else if (el.dataset.p || el.dataset.geo) propInput(el);
     });
     $('es-props').addEventListener('input', (e) => {
-        if (e.target.dataset.p === 'text') {
+        const k = e.target.dataset.p;
+        if (k === 'text' || k === 'label') {
             const list = sel();
-            list.forEach((f) => { f.props = { ...f.props, text: e.target.value }; });
+            list.forEach((f) => { f.props = { ...f.props, [k]: e.target.value }; });
             propagateLinks();
             renderFields();
             save();
         }
     });
     $('es-props').addEventListener('focusin', (e) => {
-        if (e.target.dataset.p === 'text') remember();
+        if (e.target.dataset.p === 'text' || e.target.dataset.p === 'label') remember();
     });
     $('es-props').addEventListener('click', (e) => {
         const b = e.target.closest('button');
@@ -985,6 +1225,14 @@
         else if (b.dataset.align) {
             remember();
             sel().forEach((f) => { f.props = { ...f.props, align: b.dataset.align }; });
+            changed();
+        } else if (b.dataset.size) {
+            // one step smaller / bigger for every text-like field selected
+            remember();
+            sel().filter((f) => TEXTY.includes(f.type)).forEach((f) => {
+                const now = f.props.size || (f.type === 'mark' ? 12 : 10);
+                f.props = { ...f.props, size: Math.max(5, Math.min(72, now + (+b.dataset.size) * (now >= 14 ? 2 : 1))) };
+            });
             changed();
         } else if (b.dataset.arrange) arrange(b.dataset.arrange);
         else if (b.dataset.act) panelAction(b.dataset.act);
@@ -998,6 +1246,17 @@
     $('es-undo').addEventListener('click', undo);
     $('es-redo').addEventListener('click', redo);
     $('es-send').addEventListener('click', send);
+    // Save now (changes also save themselves a moment after the last one, so nothing is lost if this is forgotten)
+    $('es-save').addEventListener('click', async () => {
+        const b = $('es-save');
+        Phai.busy(b, true);
+        try {
+            await save(true);
+            Phai.toast(tr(T.saved_at, { time: new Date().toTimeString().slice(0, 5) }), 'success');
+        } catch (_) { /* flush showed why */ } finally {
+            Phai.busy(b, false);
+        }
+    });
     $('es-delete').addEventListener('click', async () => {
         if (!(await Phai.confirm(T.delete_confirm))) return;
         clearTimeout(saveTimer);
@@ -1011,9 +1270,24 @@
         }
     });
 
+    /** The pages box fills the window below the bars and scrolls on its own, so pages never slide under the bars. */
+    function fitHeight() {
+        // the bars also stick just under the app's top bar, in case the window itself scrolls (a short window)
+        const bar = document.querySelector('.phai-topbar');
+        const barBottom = bar && getComputedStyle(bar).position !== 'static' ? bar.getBoundingClientRect().bottom : 0;
+        document.querySelector('.es-top').style.setProperty('--es-top', Math.max(0, barBottom) + 'px');
+        const box = $('es-pages');
+        const top = box.getBoundingClientRect().top + window.scrollY;
+        box.style.height = Math.max(320, window.innerHeight - top - 16) + 'px';
+    }
+    window.addEventListener('resize', fitHeight);
+    // the format bar can wrap onto a second line as the selection changes
+    new ResizeObserver(fitHeight).observe(document.querySelector('.es-top'));
+
     renderFiles();
     renderTools();
     renderAll();
+    fitHeight();
     buildPages();
     Phai.api.get('/api/envelopes/people').then((list) => {
         people = list;

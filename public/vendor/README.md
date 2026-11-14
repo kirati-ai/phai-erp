@@ -34,3 +34,10 @@ to operate completely offline without any internet connection.
 - **Source:** [PDF.js](https://mozilla.github.io/pdf.js/) via the npm registry (`pdfjs-dist@4.10.38`)
 - **License:** Apache License 2.0 (see `public/vendor/pdfjs/LICENSE`)
 - **Used by:** e-Document Sign (`js/esign-pdf.js`): shows the pages of an envelope to place and fill its fields
+
+### 5. Handwriting fonts: Charm, Charmonman, Itim, Mali, Sriracha
+- **Path:** `public/fonts/handwriting/` (`handwriting.css` and the `.ttf` files, Regular only)
+- **Files:** Charm, Mali and Sriracha are the same files as the Phai Sign service's `public/fonts/handwriting/`; Itim and Charmonman from the google/fonts repository (`ofl/itim`, `ofl/charmonman`), 2026-11-14
+- **Source:** Google Fonts ([Charm](https://github.com/cadsondemak/charm), [Charmonman](https://github.com/cadsondemak/Charmonman), [Itim](https://github.com/cadsondemak/itim), [Mali](https://github.com/cadsondemak/Mali), [Sriracha](https://github.com/cadsondemak/sriracha), all by Cadson Demak); Thai and Latin
+- **License:** SIL Open Font License 1.1 (see `OFL-*.txt` beside them)
+- **Used by:** e-Document Sign: a font a field may choose in the envelope editor, drawn on the final PDF

@@ -223,7 +223,8 @@ final class EnvelopePdf
                 $out['text'] = $s['envs_position'] ?? '';
                 break;
             case 'date':
-                $out['text'] = $s && $s['envs_sign_at'] ? self::day($s['envs_sign_at']) : '';
+                $fmt = (string) ($f['envx_props']['datefmt'] ?? '');
+                $out['text'] = $s && $s['envs_sign_at'] ? ($fmt !== '' ? Envelope::dateAs($s['envs_sign_at'], $fmt) : self::day($s['envs_sign_at'])) : '';
                 break;
             case 'timeline':
                 $out['text'] = $s ? self::times($s) : '';

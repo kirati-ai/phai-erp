@@ -1,26 +1,34 @@
 /* e-Document Sign: the editor, the signing page and the envelope page (views/esign/*). */
 
-.es-wrap { display: grid; grid-template-columns: 17rem minmax(0, 1fr) 16rem; grid-template-areas: "left main right"; gap: .75rem; align-items: start; }
-.es-left { grid-area: left; }
-.es-main { grid-area: main; min-width: 0; }
-.es-right { grid-area: right; }
-.es-side { position: sticky; top: 4rem; max-height: calc(100vh - 5rem); overflow: auto; }
-.es-side .card + .card { margin-top: .75rem; }
-.es-side .card-body { padding: .6rem .7rem; }
-.es-side h4 { font-size: .8rem; text-transform: none; margin: 0 0 .4rem; color: var(--tblr-secondary); font-weight: 600; }
-@media (max-width: 1399px) {
-    .es-wrap { grid-template-columns: minmax(0, 1fr) 17rem; grid-template-rows: auto 1fr; grid-template-areas: "main left" "main right"; }
-    .es-side { position: static; max-height: none; }
-}
-@media (max-width: 767px) {
-    .es-wrap { grid-template-columns: 1fr; grid-template-areas: "left" "right" "main"; }
-}
+.es-grow { flex: 1; }
+.es-main { min-width: 0; }
 
 .es-bar { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin-bottom: .6rem; }
 .es-bar .form-control { max-width: 28rem; }
-.es-bar .es-grow { flex: 1; }
 
-.es-pages { display: flex; flex-direction: column; align-items: center; gap: .9rem; padding: .75rem; background: var(--tblr-bg-surface-secondary, #eef1f4); border-radius: var(--tblr-border-radius); min-height: 20rem; overflow-x: auto; }
+/* the editor's bars, like a PDF editor's: they stay at the top while the pages scroll under them */
+/* the bars stay put and only the pages scroll, in their own box sized to the window (envelope-edit.js fitHeight),
+   so a page never slides under the bars */
+.es-top { margin-bottom: .4rem; position: sticky; top: var(--es-top, 0px); z-index: 30; background: var(--tblr-body-bg, #f6f8f7); }
+.es-top .es-bar { margin-bottom: .4rem; }
+.es-toolbar, .es-format { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; background: var(--tblr-bg-surface, #fff); border: 1px solid var(--tblr-border-color); border-radius: var(--tblr-border-radius); padding: .3rem .4rem; }
+.es-format { margin-top: .3rem; min-height: 2.45rem; border-color: color-mix(in srgb, var(--tblr-primary) 35%, var(--tblr-border-color)); }
+.es-toolbar .btn, .es-format .btn { padding: .2rem .45rem; }
+.es-sep { width: 1px; align-self: stretch; background: var(--tblr-border-color); margin: 0 .2rem; }
+.es-format .es-what { font-size: .75rem; font-weight: 600; margin-right: .2rem; white-space: nowrap; }
+.es-format .es-what small { font-weight: 400; color: var(--tblr-secondary); }
+.es-format .es-size { width: 4rem; }
+.es-format .form-control-color { width: 1.9rem; height: 1.7rem; padding: .1rem; }
+.es-menu { min-width: 15rem; font-size: .8rem; }
+.es-menu label { font-size: .72rem; color: var(--tblr-secondary); margin-bottom: .1rem; }
+.es-menu .row { --tblr-gutter-x: .3rem; --tblr-gutter-y: .3rem; }
+
+
+/* a new signer: which fields to place, as tick boxes in two columns */
+.es-checks { display: grid; grid-template-columns: 1fr 1fr; gap: .2rem .75rem; }
+.es-checks .form-check { margin: 0; }
+
+.es-pages { display: flex; flex-direction: column; align-items: safe center; gap: .9rem; padding: .75rem; background: var(--tblr-bg-surface-secondary, #eef1f4); border-radius: var(--tblr-border-radius); min-height: 20rem; overflow: auto; }
 .es-page { position: relative; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.18); flex: none; }
 .es-page canvas { display: block; width: 100%; height: 100%; }
 .es-page .es-no { position: absolute; left: -2.2rem; top: 0; font-size: .7rem; color: var(--tblr-secondary); }
@@ -39,9 +47,7 @@
 .es-field .es-link { position: absolute; top: -8px; right: -6px; font-size: 10px; color: var(--tblr-primary); }
 .es-field img { max-width: 100%; max-height: 100%; object-fit: contain; pointer-events: none; }
 
-.es-tools { display: grid; grid-template-columns: 1fr 1fr; gap: .3rem; }
-.es-tools .btn { justify-content: flex-start; font-size: .75rem; padding: .25rem .4rem; }
-.es-tools .btn.active { background: var(--tblr-primary); color: #fff; }
+.es-tools .btn.active, .es-tools .dropdown-item.active { background: var(--tblr-primary); color: #fff; }
 .es-dot { display: inline-block; width: .65rem; height: .65rem; border-radius: 50%; background: var(--es-c, #888); flex: none; }
 
 .es-signer { border: 1px solid var(--tblr-border-color); border-left: 4px solid var(--es-c, #888); border-radius: 4px; padding: .35rem .45rem; margin-bottom: .35rem; font-size: .78rem; }
@@ -52,8 +58,6 @@
 .es-file .es-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .es-file .btn { padding: 0 .25rem; }
 
-.es-props label { font-size: .72rem; color: var(--tblr-secondary); margin-bottom: .1rem; }
-.es-props .row { --tblr-gutter-x: .3rem; --tblr-gutter-y: .3rem; }
 .es-iconbar { display: flex; flex-wrap: wrap; gap: .2rem; }
 .es-iconbar .btn { padding: .15rem .35rem; }
 .es-problems { font-size: .78rem; }
@@ -62,7 +66,7 @@
 /* signing page */
 .es-mine { border-width: 2px; background: color-mix(in srgb, var(--es-c, #1d6fd8) 16%, #fff); cursor: pointer; }
 .es-mine.es-filled { background: transparent; border-style: dotted; }
-.es-mine input[type=text] { width: 100%; height: 100%; border: 0; background: transparent; font-size: inherit; padding: 0 2px; outline: none; }
+.es-mine input:not([type=checkbox]) { width: 100%; height: 100%; border: 0; background: transparent; font-size: inherit; padding: 0 2px; outline: none; }
 .es-mine input[type=checkbox] { margin: auto; }
 .es-other { cursor: default; border-style: dotted; background: transparent; }
 .es-field .es-cap { position: absolute; left: 0; top: 100%; font-size: 8px; color: #333; white-space: nowrap; pointer-events: none; }
@@ -73,3 +77,19 @@
 .es-timeline { list-style: none; padding: 0; margin: 0; font-size: .8rem; }
 .es-timeline li { display: grid; grid-template-columns: 11rem 1fr; gap: .5rem; padding: .25rem 0; border-bottom: 1px solid var(--tblr-border-color-translucent, #eee); }
 .es-hash { font-family: var(--tblr-font-monospace, monospace); font-size: .72rem; word-break: break-all; }
+
+/* inside / outside: the chosen one filled, like a pressed button */
+#es-add-modal .btn-check:checked + .btn { background: var(--tblr-primary); border-color: var(--tblr-primary); color: #fff; }
+
+.es-format .es-hint { font-size: .75rem; color: var(--tblr-secondary); }
+.es-menu .dropdown-header { padding: .25rem 0; font-size: .7rem; }
+.es-arr { display: grid; grid-template-columns: repeat(6, auto); gap: .2rem; justify-content: start; }
+
+/* Save: tinted while there are changes not yet saved */
+#es-save.es-dirty { background: var(--tblr-primary-lt, #e3f1e8); border-color: var(--tblr-primary); color: var(--tblr-primary); }
+
+/* the signers dialog: names in order, each with its colour, moved up / down a step */
+.es-srow { display: flex; align-items: center; gap: .4rem; padding: .35rem .5rem; border: 1px solid var(--tblr-border-color); border-left: 4px solid var(--es-c, #888); border-radius: 4px; margin-bottom: .3rem; font-size: .8rem; }
+.es-srow .es-sname { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.es-srow .es-sname small { color: var(--tblr-secondary); }
+.es-srow .btn { padding: .1rem .3rem; }
