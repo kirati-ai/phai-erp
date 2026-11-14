@@ -114,7 +114,7 @@ return [
     'empty_add_sign'        => 'Upload the main document first, then add signers',
     'copy_go'               => 'Copy',
     'del_go'                => 'Remove',
-    'format_hint'           => 'Select a field on the document to format it · Shift+click or drag a box to select several',
+    'format_hint'           => 'Select a field on the document to format it · Ctrl+click or Shift+click, or drag a box, to select several · drag a corner to resize; the text follows',
     'text_boxes'            => 'Text boxes the signer fills in',
     'tb_text'               => 'Any text',
     'tb_email'              => 'Email',
