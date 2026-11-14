@@ -39,6 +39,7 @@
         $('es-download').href = `${base}/envelopes/${nbr}/final?download=1`;
         $('es-remind').hidden = !D.can.manage;
         $('es-recall').hidden = !D.can.manage;
+        $('es-reopen').hidden = !D.can.reopen;
         $('es-final-card').hidden = !D.can.final;
         if (D.can.final && !$('es-final-frame').src) $('es-final-frame').src = `${base}/envelopes/${nbr}/final`;
 
@@ -99,6 +100,12 @@
         if (!(await Phai.confirm(T.recall_confirm))) return;
         D = await Phai.api.post(`/api/envelopes/${nbr}/recall`);
         render();
+    });
+    // withdrawn or declined: back to a draft and into the editor
+    $('es-reopen').addEventListener('click', async () => {
+        if (!(await Phai.confirm(tr(T.reopen_confirm, { nbr }), { title: T.act_reopen, ok: T.act_edit, icon: 'pencil' }))) return;
+        await Phai.api.post(`/api/envelopes/${nbr}/reopen`);
+        location.href = `${base}/envelopes/${nbr}/edit`;
     });
     render();
     // signers and the final document on the left, files and history on the right, the bar between them dragged

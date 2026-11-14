@@ -72,6 +72,7 @@ final class Envelope
             'owner' => $isOwner,
             'can' => [
                 'edit' => $isOwner && $env['env_status'] === 'D',
+                'reopen' => $isOwner && in_array($env['env_status'], ['W', 'X'], true),
                 'sign' => $me !== null && $me['envs_status'] === 'R' && $env['env_status'] === 'S',
                 'manage' => ($isOwner || Auth::isAdmin()) && $env['env_status'] === 'S',
                 'final' => $env['env_status'] === 'C' && $env['env_final_file'] !== null,
@@ -677,6 +678,39 @@ final class Envelope
         });
         self::tellReached($env, t('esign.mail_recalled_subject', ['title' => $env['env_title']]), t('esign.mail_recalled_body', ['title' => $env['env_title'], 'nbr' => $nbr]));
         EnvelopeRemote::after($nbr);
+        return self::load($nbr);
+    }
+
+    /**
+     * Its sender takes a withdrawn or declined envelope back to a draft, to change it and send it again. Nothing of
+     * the first round stays in effect: every signer is back to "not yet" with no times, signature or answers, those
+     * who were replaced leave, and what was filled in is cleared. The history keeps the first round (sent,
+     * withdrawn / declined) and says it was reopened, so the evidence pages of the next round show it all.
+     */
+    public static function reopen(string $nbr): array
+    {
+        $env = self::row($nbr);
+        if ($env['created_by'] !== Auth::userId()) {
+            throw HttpException::notFound();
+        }
+        if (!in_array($env['env_status'], ['W', 'X'], true)) {
+            throw new HttpException(409, t('esign.cannot_reopen'));
+        }
+        $me = Auth::userId();
+        App::db()->transaction(function () use ($nbr, $me) {
+            $db = App::db();
+            $db->update('env_mstr', [
+                'env_status' => 'D', 'env_step' => 0, 'env_sent_at' => null, 'env_done_at' => null, 'env_remote_final' => null,
+                'env_witness_id' => null, 'env_witness_at' => null, 'updated_by' => $me,
+            ], ['env_nbr' => $nbr]);
+            // someone replaced by another signer leaves; the one who took their place stays
+            $db->run('DELETE FROM envs_det WHERE envs_nbr = ? AND envs_id IN (SELECT r FROM (SELECT envs_replaces AS r FROM envs_det WHERE envs_nbr = ? AND envs_replaces IS NOT NULL) x)', [$nbr, $nbr]);
+            $db->run("UPDATE envs_det SET envs_status = 'W', envs_recv_at = NULL, envs_open_at = NULL, envs_sign_at = NULL, envs_ip = NULL, envs_agent = NULL,
+                envs_note = NULL, envs_hash = NULL, envs_image = NULL, envs_replaces = NULL, envs_ext = NULL, envs_ext_state = NULL, envs_ext_err = NULL, updated_by = ?
+                WHERE envs_nbr = ?", [$me, $nbr]);
+            $db->run('UPDATE envx_det SET envx_value = NULL, updated_by = ? WHERE envx_nbr = ?', [$me, $nbr]);
+            EnvelopeLog::add($nbr, 'reopened');
+        });
         return self::load($nbr);
     }
 
