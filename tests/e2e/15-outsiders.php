@@ -1,19 +1,19 @@
 <?php
 
 // e-Document Sign with people outside the company, through a running Phai Sign service (its own project,
-// phai-monrak): registering this machine, the settings only ADMIN sees, an envelope whose first step is an outsider,
+// phai-sign): registering this machine, the settings only ADMIN sees, an envelope whose first step is an outsider,
 // their mail and code, signing at the service with a typed name, the result pulled back with the service's times,
 // the next step, the final document mailed to the outsider through the service, the outside witness, and withdrawing.
 // Needs the service with dev = true (mail written to storage/outbox) and register.open; skipped when it is not there.
-//   PHAI_SIGN_URL (default http://localhost/phai-monrak), PHAI_SIGN_OUTBOX (default ../phai-monrak/storage/outbox)
+//   PHAI_SIGN_URL (default http://localhost/phai-sign), PHAI_SIGN_OUTBOX (default ../phai-sign/storage/outbox)
 // Run through tests/e2e/run.php (needs a fresh install). Never prints passwords.
 
 declare(strict_types=1);
 
 require __DIR__ . '/lib.php';
 
-$svc = rtrim(getenv('PHAI_SIGN_URL') ?: 'http://localhost/phai-monrak', '/');
-$outbox = getenv('PHAI_SIGN_OUTBOX') ?: dirname(PHAI_ROOT) . '/phai-monrak/storage/outbox';
+$svc = rtrim(getenv('PHAI_SIGN_URL') ?: 'http://localhost/phai-sign', '/');
+$outbox = getenv('PHAI_SIGN_OUTBOX') ?: dirname(PHAI_ROOT) . '/phai-sign/storage/outbox';
 [$up] = raw('GET', "$svc/");
 if ($up !== 200 || !is_dir($outbox)) {
     echo "  ok   skipped: no Phai Sign service at $svc (or no outbox at $outbox)\n";
