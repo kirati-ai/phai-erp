@@ -12,10 +12,10 @@ No Composer, npm or build step.
 
 ## 1. Put the files in place
 
-**Quick (Apache)** — copy the `phaierp` folder under the web root, e.g. `htdocs/phaierp`, and open `http://localhost/phaierp/`.
+**Quick (Apache)** — copy the `phai-erp` folder under the web root, e.g. `htdocs/phai-erp`, and open `http://localhost/phai-erp/`.
 The `.htaccess` in the main folder sends every request into `public/`, so `config.php`, `src/` and `database/` are never served.
 
-**Recommended for production** — point the document root at `phaierp/public`.
+**Recommended for production** — point the document root at `phai-erp/public`.
 
 Nginx:
 
@@ -23,7 +23,7 @@ Nginx:
 server {
     listen 80;
     server_name erp.example.com;
-    root /var/www/phaierp/public;
+    root /var/www/phai-erp/public;
     index index.php;
 
     location / {
