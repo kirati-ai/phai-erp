@@ -39,6 +39,8 @@ final class Envelope
     /** Kinds of answer a text box can ask for: the signing page offers the matching keyboard / picker, sign() checks it. */
     public const TEXT_INPUTS = ['email', 'tel', 'number', 'numeric', 'date'];
     /** How a signing-date field shows the day (props.datefmt); without one it is th_short, as before. See dateAs(). */
+    /** Envelopes their sender may delete: draft, withdrawn, declined (deleteDraft). */
+    public const DELETABLE = ['D', 'W', 'X'];
     public const DATE_FORMATS = ['th_short', 'th_long', 'num_be', 'num_ce', 'iso', 'en'];
     /** Fonts a field may use: bundled with PhaiERP (plex, and the handwriting ones in public/fonts/handwriting) or installed on Phai Server (noto), so the final PDF has them offline. */
     public const FONTS = ['plex', 'noto', 'charm', 'charmonman', 'itim', 'mali', 'sriracha'];
@@ -385,9 +387,19 @@ final class Envelope
         return self::load($nbr);
     }
 
+    /**
+     * Its sender deletes an envelope that has no legal effect: a draft, or one withdrawn or declined. One being signed
+     * is withdrawn first (so the signers are told), and a finished one is evidence and stays.
+     */
     public static function deleteDraft(string $nbr): void
     {
-        self::draft($nbr);
+        $env = self::row($nbr);
+        if ($env['created_by'] !== Auth::userId()) {
+            throw HttpException::notFound();
+        }
+        if (!in_array($env['env_status'], self::DELETABLE, true)) {
+            throw new HttpException(409, t($env['env_status'] === 'C' ? 'esign.cannot_delete_done' : 'esign.cannot_delete_signing'));
+        }
         foreach (EnvelopeFile::list($nbr) as $f) {
             EnvelopeFile::remove(EnvelopeFile::find($nbr, (int) $f['envf_id']));
         }

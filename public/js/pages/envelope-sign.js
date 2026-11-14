@@ -40,14 +40,16 @@
     $('es-nbr').textContent = nbr;
     $('es-head').textContent = D.env.env_title;
     $('es-envelope').href = `${base}/envelopes/${nbr}`;
+    // the sender's message, in the panel on the right
     if (D.env.env_note) {
         $('es-note-box').hidden = false;
-        $('es-note-box').querySelector('.card-body').textContent = D.env.env_note;
+        $('es-note-text').textContent = D.env.env_note;
     }
 
+    // what to do here, at the top of the panel
     const msg = (text, type = 'info') => {
         $('es-msg').hidden = false;
-        $('es-msg').className = `alert alert-${type} py-2 small`;
+        $('es-msg').className = `alert alert-${type} py-2 small mb-2`;
         $('es-msg').textContent = text;
     };
     if (D.can.sign) {
@@ -65,7 +67,8 @@
 
     // files
     let k = 0;
-    $('es-files').innerHTML = D.files.map((f) => `<div class="es-file"><i class="ti ${f.envf_kind === 'M' ? 'ti-file-text' : 'ti-paperclip'}"></i>
+    $('es-files-n').textContent = D.files.length || '';
+    $('es-files').innerHTML =D.files.map((f) => `<div class="es-file"><i class="ti ${f.envf_kind === 'M' ? 'ti-file-text' : 'ti-paperclip'}"></i>
         <a class="es-name" href="${esc(base + '/envelopes/' + nbr + '/files/' + f.envf_id)}" target="_blank" rel="noopener">${esc(f.envf_name)}</a>
         <span class="small text-secondary text-nowrap">${esc(f.envf_kind === 'M' ? T.kind_M : tr(T.kind_A_n, { k: ++k }))} · ${f.envf_pages} ${esc(T.pages_short)}</span></div>`).join('');
 
@@ -76,7 +79,7 @@
     const image = () => drawn || saved;
     function sigPreview() {
         const img = image();
-        $('es-sigbox').innerHTML = img ? `<img src="${esc(img)}" alt="" style="max-height:64px;max-width:100%">` : `<span class="small text-secondary">${esc(T.no_signature)}</span>`;
+        $('es-sigbox').innerHTML = img ? `<img src="${esc(img)}" alt="">` : `<span class="small text-secondary">${esc(T.no_signature)}</span>`;
         document.querySelectorAll('.es-mine[data-sig]').forEach((el) => {
             el.innerHTML = img ? `<img src="${esc(img)}" alt="">` : `<span class="es-lbl">${esc(T.click_to_sign)}</span>`;
             el.classList.toggle('es-filled', !!img);
@@ -167,10 +170,16 @@
         sigPreview();
     }
     renderFields();
-    window.addEventListener('resize', () => {
+    // pages on the left, the panel on the right; dragging the bar between them (or a new window size) refits the pages
+    window.PhaiSplit.init(document.querySelector('.es-split'), 'sign', () => {
         view.zoom(fit());
         renderFields();
     });
+    document.querySelectorAll('[data-zoom]').forEach((b) => b.addEventListener('click', () => {
+        const z = +b.dataset.zoom;
+        view.zoom(z === 0 ? fit() : Math.max(0.3, Math.min(4, view.scale * (z > 0 ? 1.2 : 1 / 1.2))));
+        renderFields();
+    }));
     box.addEventListener('input', (e) => {
         const i = e.target.closest('[data-f]');
         if (i) values[i.dataset.f] = i.type === 'checkbox' ? (i.checked ? '1' : '0') : i.value;

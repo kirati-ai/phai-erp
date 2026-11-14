@@ -645,9 +645,13 @@
         }
         if (tf) {
             const mark = tf.type === 'mark';
+            // font sizes in pt as word processors list them; a size set some other way (A- / A+) stays in the list
+            const size = +(p.size || (mark ? 12 : 10));
+            const sizes = [...new Set([6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 72, size])].sort((a, b) => a - b);
             html += sep + `<select class="form-select form-select-sm w-auto" data-p="font" title="${esc(T.font)}">${Object.keys(FONTS).map((k) =>
                     `<option value="${k}"${(p.font || 'plex') === k ? ' selected' : ''} style="font-family:${esc(FONTS[k])}">${esc(FONT_NAMES[k])}</option>`).join('')}</select>`
-                + `<input class="form-control form-control-sm es-size" type="number" min="5" max="72" step="0.5" data-p="size" value="${p.size || (mark ? 12 : 10)}" title="${esc(T.font_size)}">`
+                + `<select class="form-select form-select-sm es-size" data-p="size" title="${esc(T.font_size)}">${sizes.map((n) =>
+                    `<option value="${n}"${n === size ? ' selected' : ''}>${n}</option>`).join('')}</select>`
                 + btn('data-size="-1"', 'text-decrease', T.font_smaller) + btn('data-size="1"', 'text-increase', T.font_bigger)
                 + btn('data-toggle="bold"', 'bold', T.bold, p.bold) + btn('data-toggle="italic"', 'italic', T.italic, p.italic) + btn('data-toggle="underline"', 'underline', T.underline, p.underline)
                 + `<input type="color" class="form-control form-control-color" data-p="color" value="${esc(p.color || (mark ? '#c92a2a' : '#111111'))}" title="${esc(T.color)}">`

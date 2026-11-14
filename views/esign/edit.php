@@ -122,7 +122,7 @@ $tip = fn (string $label) => ' title="' . e($label) . '" aria-label="' . e($labe
                     <label class="form-label" for="es-add-email"><?= e(t('esign.email')) ?></label>
                     <input class="form-control form-control-sm" id="es-add-email" type="email" maxlength="150">
                 </div>
-                <div class="col-12 small text-warning" data-kind-only="E" hidden><?= e(t('esign.outside_hint')) ?></div>
+                <div class="col-12" data-kind-only="E" hidden><div class="es-note-info"><i class="ti ti-info-circle"></i><span><?= e(t('esign.outside_hint')) ?></span></div></div>
                 <div class="col-md-6">
                     <label class="form-label" for="es-add-position"><?= e(t('esign.position')) ?></label>
                     <input class="form-control form-control-sm" id="es-add-position" maxlength="100">

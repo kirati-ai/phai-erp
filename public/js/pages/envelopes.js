@@ -18,28 +18,63 @@
         if (count) count.textContent = rows.length || '';
     }
 
-    Phai.api.get('/api/envelopes').then((d) => {
-        const add = document.getElementById('es-new');
-        add.hidden = !d.canSend;
-        document.getElementById('es-remote').hidden = !d.admin;
-        fill('es-waiting', d.waiting, (r) => `<tr>
-            <td>${link(`/envelopes/${r.env_nbr}/sign`, r.env_nbr)}</td><td>${link(`/envelopes/${r.env_nbr}/sign`, r.env_title)}</td>
-            <td>${esc(r.sender || '')}</td><td>${esc(T['role_' + r.envs_role])}</td>
-            <td class="text-nowrap">${esc(short(r.envs_recv_at))}</td><td class="text-nowrap">${r.envs_open_at ? esc(short(r.envs_open_at)) : `<span class="badge bg-orange-lt">${esc(T.unopened)}</span>`}</td></tr>`, T.none_waiting);
-        fill('es-sent', d.sent, (r) => {
-            const href = r.env_status === 'D' ? `/envelopes/${r.env_nbr}/edit` : `/envelopes/${r.env_nbr}`;
-            const [done, n] = r.progress;
-            return `<tr><td>${link(href, r.env_nbr)}</td><td>${link(href, r.env_title)}</td><td>${badge(r.env_status)}</td>
-                <td>${n ? `${done} / ${n}` : ''}</td><td class="text-nowrap">${esc(short(r.env_sent_at))}</td><td class="text-nowrap">${esc(short(r.env_done_at))}</td></tr>`;
-        }, T.none_sent);
-        fill('es-done', d.done, (r) => `<tr><td>${link(`/envelopes/${r.env_nbr}`, r.env_nbr)}</td><td>${link(`/envelopes/${r.env_nbr}`, r.env_title)}</td>
-            <td>${esc(r.sender || '')}</td><td class="text-nowrap">${esc(short(r.env_done_at))}</td></tr>`, T.none_done);
-        if (!d.waiting.length && (d.sent.length || d.done.length)) {
-            const tab = document.querySelector(`a[href="#${d.sent.length ? 'es-sent' : 'es-done'}"]`);
-            const bs = window.bootstrap || window.tabler;
-            if (tab && bs?.Tab) bs.Tab.getOrCreateInstance(tab).show();
+    // Envelopes their sender may delete: draft, withdrawn, declined (Envelope::DELETABLE). One being signed is
+    // withdrawn first; a finished one is evidence and has no delete button.
+    const DELETABLE = ['D', 'W', 'X'];
+    const icon = (attr, i, title, extra = '') => `<button type="button" class="btn btn-sm btn-ghost-${extra || 'secondary'} px-1" ${attr} title="${esc(title)}" aria-label="${esc(title)}"><i class="ti ti-${i}"></i></button>`;
+
+    function load(keepTab = false) {
+        return Phai.api.get('/api/envelopes').then((d) => {
+            const add = document.getElementById('es-new');
+            add.hidden = !d.canSend;
+            document.getElementById('es-remote').hidden = !d.admin;
+            // every row opens on a click anywhere in it (data-href); the links stay for the keyboard and a new tab
+            fill('es-waiting', d.waiting, (r) => `<tr data-href="/envelopes/${esc(r.env_nbr)}/sign">
+                <td>${link(`/envelopes/${r.env_nbr}/sign`, r.env_nbr)}</td><td>${esc(r.env_title)}</td>
+                <td>${esc(r.sender || '')}</td><td>${esc(T['role_' + r.envs_role])}</td>
+                <td class="text-nowrap">${esc(short(r.envs_recv_at))}</td><td class="text-nowrap">${r.envs_open_at ? esc(short(r.envs_open_at)) : `<span class="badge bg-orange-lt">${esc(T.unopened)}</span>`}</td></tr>`, T.none_waiting);
+            fill('es-sent', d.sent, (r) => {
+                const draft = r.env_status === 'D';
+                const href = draft ? `/envelopes/${r.env_nbr}/edit` : `/envelopes/${r.env_nbr}`;
+                const [done, n] = r.progress;
+                const acts = (draft ? icon(`data-go="${esc(href)}"`, 'pencil', T.act_edit) : icon(`data-go="${esc(href)}"`, 'eye', T.act_view))
+                    + (DELETABLE.includes(r.env_status) ? icon(`data-del="${esc(r.env_nbr)}" data-title="${esc(r.env_title)}"`, 'trash', T.act_delete, 'danger') : '');
+                return `<tr data-href="${esc(href)}"><td>${link(href, r.env_nbr)}</td><td>${esc(r.env_title)}</td><td>${badge(r.env_status)}</td>
+                    <td>${n ? `${done} / ${n}` : ''}</td><td class="text-nowrap">${esc(short(r.env_sent_at))}</td><td class="text-nowrap">${esc(short(r.env_done_at))}</td>
+                    <td class="text-end text-nowrap">${acts}</td></tr>`;
+            }, T.none_sent);
+            fill('es-done', d.done, (r) => `<tr data-href="/envelopes/${esc(r.env_nbr)}"><td>${link(`/envelopes/${r.env_nbr}`, r.env_nbr)}</td><td>${esc(r.env_title)}</td>
+                <td>${esc(r.sender || '')}</td><td class="text-nowrap">${esc(short(r.env_done_at))}</td></tr>`, T.none_done);
+            if (!keepTab && !d.waiting.length && (d.sent.length || d.done.length)) {
+                const tab = document.querySelector(`a[href="#${d.sent.length ? 'es-sent' : 'es-done'}"]`);
+                const bs = window.bootstrap || window.tabler;
+                if (tab && bs?.Tab) bs.Tab.getOrCreateInstance(tab).show();
+            }
+        });
+    }
+    load();
+
+    document.querySelectorAll('.es-rows tbody').forEach((tb) => tb.addEventListener('click', async (e) => {
+        const del = e.target.closest('[data-del]');
+        if (del) {
+            const tr2 = (s, p) => Object.entries(p).reduce((a, [k, v]) => a.replace(':' + k, v), s || '');
+            if (!(await Phai.confirm(tr2(T.delete_row_confirm, { nbr: del.dataset.del, title: del.dataset.title })))) return;
+            try {
+                await Phai.api.del(`/api/envelopes/${encodeURIComponent(del.dataset.del)}`);
+                Phai.toast(T.deleted, 'success');
+                load(true);
+            } catch (_) { /* Phai.api has shown why (e.g. being signed: withdraw it first) */ }
+            return;
         }
-    });
+        const go = e.target.closest('[data-go]');
+        if (go) {
+            location.href = base + go.dataset.go;
+            return;
+        }
+        // a click anywhere else in the row opens it, unless it was on the link itself (which opens anyway)
+        const row = e.target.closest('tr[data-href]');
+        if (row && !e.target.closest('a')) location.href = base + row.dataset.href;
+    }));
 
     // ---------------------------------------------------------------- Phai Sign (outside signers), ADMIN
     const $ = (id) => document.getElementById(id);

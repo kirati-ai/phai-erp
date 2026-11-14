@@ -5,7 +5,7 @@ $tab = fn (string $id, string $icon, string $label, bool $on = false) =>
     '<li class="nav-item"><a href="#' . $id . '" class="nav-link' . ($on ? ' active' : '') . '" data-bs-toggle="tab"><i class="ti ti-' . $icon . ' me-1"></i>' . e($label) . ' <span class="text-secondary ms-1" data-count="' . $id . '"></span></a></li>';
 $tables = [
     'es-waiting' => ['nbr', 'title', 'from', 'role', 'received', 'opened'],
-    'es-sent'    => ['nbr', 'title', 'state', 'progress', 'sent', 'done'],
+    'es-sent'    => ['nbr', 'title', 'state', 'progress', 'sent', 'done', 'act'],
     'es-done'    => ['nbr', 'title', 'from', 'done'],
 ];
 ?>
@@ -58,8 +58,8 @@ $tables = [
         <?php foreach ($tables as $id => $cols): ?>
         <div class="tab-pane<?= $id === 'es-waiting' ? ' active show' : '' ?>" id="<?= $id ?>">
             <div class="table-responsive">
-                <table class="table table-sm table-vcenter card-table table-hover">
-                    <thead><tr><?php foreach ($cols as $c): ?><th><?= e(t("esign.col_$c")) ?></th><?php endforeach ?></tr></thead>
+                <table class="table table-sm table-vcenter card-table table-hover es-rows">
+                    <thead><tr><?php foreach ($cols as $c): ?><th<?= $c === 'act' ? ' class="text-end"' : '' ?>><?= $c === 'act' ? '' : e(t("esign.col_$c")) ?></th><?php endforeach ?></tr></thead>
                     <tbody><tr><td colspan="<?= count($cols) ?>" class="text-secondary"><?= e(t('js.loading')) ?></td></tr></tbody>
                 </table>
             </div>
