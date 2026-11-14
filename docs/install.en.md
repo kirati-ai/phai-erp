@@ -12,6 +12,8 @@ No Composer, npm or build step.
 
 ## 1. Put the files in place
 
+Download the latest zip from [phai-erp.monrak.net](https://phai-erp.monrak.net/) and unzip it: you get a `phai-erp` folder.
+
 **Quick (Apache)** — copy the `phai-erp` folder under the web root, e.g. `htdocs/phai-erp`, and open `http://localhost/phai-erp/`.
 The `.htaccess` in the main folder sends every request into `public/`, so `config.php`, `src/` and `database/` are never served.
 
