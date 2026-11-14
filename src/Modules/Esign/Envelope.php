@@ -34,7 +34,14 @@ final class Envelope
     public const PROGRAM = 'envelopes';
     public const ROLES = ['S', 'A', 'C'];
     public const SIGNER_TYPES = ['signature', 'initials', 'name', 'position', 'date', 'timeline', 'stamp', 'text', 'checkbox'];
-    public const SENDER_TYPES = ['label', 'mark'];
+    // the company stamp belongs to the document, not to a signer (one placed for a signer by older drafts still counts)
+    public const SENDER_TYPES = ['label', 'mark', 'stamp'];
+    /** Kinds of answer a text box can ask for: the signing page offers the matching keyboard / picker, sign() checks it. */
+    public const TEXT_INPUTS = ['email', 'tel', 'number', 'numeric', 'date'];
+    /** How a signing-date field shows the day (props.datefmt); without one it is th_short, as before. See dateAs(). */
+    public const DATE_FORMATS = ['th_short', 'th_long', 'num_be', 'num_ce', 'iso', 'en'];
+    /** Fonts a field may use: bundled with PhaiERP (plex, and the handwriting ones in public/fonts/handwriting) or installed on Phai Server (noto), so the final PDF has them offline. */
+    public const FONTS = ['plex', 'noto', 'charm', 'charmonman', 'itim', 'mali', 'sriracha'];
     public const COLORS = ['#1d6fd8', '#d6336c', '#2f9e44', '#e8590c', '#7048e8', '#0c8599', '#c2255c', '#5c940d'];
 
     // ------------------------------------------------------------------ reading
@@ -316,10 +323,32 @@ final class Envelope
         if (isset($p['label'])) {
             $out['label'] = mb_substr((string) $p['label'], 0, 100);
         }
+        if ($type === 'text' && in_array($p['input'] ?? '', self::TEXT_INPUTS, true)) {
+            $out['input'] = $p['input'];
+        }
+        if ($type === 'date' && in_array($p['datefmt'] ?? '', self::DATE_FORMATS, true)) {
+            $out['datefmt'] = $p['datefmt'];
+        }
+        if (in_array($p['font'] ?? '', self::FONTS, true)) {
+            $out['font'] = $p['font'];
+        }
         if (in_array($type, ['signature', 'initials'], true) && !array_key_exists('required', $p)) {
             $out['required'] = true;
         }
         return $out;
+    }
+
+    /** Why a typed answer does not fit its text box's kind, or null when it does (or the box takes anything). */
+    private static function badInput(string $v, string $kind): ?string
+    {
+        return match ($kind) {
+            'email'   => filter_var($v, FILTER_VALIDATE_EMAIL) ? null : t('validation.email'),
+            'tel'     => preg_match('/^[0-9+()\-\s]{6,20}$/', $v) ? null : t('esign.bad_tel'),
+            'number'  => is_numeric(str_replace(',', '', $v)) ? null : t('validation.number'),
+            'numeric' => ctype_digit($v) ? null : t('esign.bad_digits'),
+            'date'    => ($d = \DateTime::createFromFormat('!Y-m-d', $v)) && $d->format('Y-m-d') === $v ? null : t('validation.date'),
+            default   => null,
+        };
     }
 
     public static function addFile(string $nbr, string $kind, string $name, string $data): array
@@ -476,6 +505,8 @@ final class Envelope
                     $v = mb_substr(trim((string) $v), 0, 500);
                     if ($v === '' && !empty($f['envx_props']['required'])) {
                         $errors["f$id"] = t('validation.required');
+                    } elseif ($v !== '' && ($bad = self::badInput($v, (string) ($f['envx_props']['input'] ?? ''))) !== null) {
+                        $errors["f$id"] = $bad;
                     }
                     $save[$id] = $v;
                     break;
@@ -925,5 +956,26 @@ final class Envelope
         $months = explode(',', t('esign.months'));
         $year = (int) date('Y', $ts) + (int) t('esign.year_offset');
         return (int) date('j', $ts) . ' ' . ($months[(int) date('n', $ts) - 1] ?? date('M', $ts)) . " $year " . date($seconds ? 'H:i:s' : 'H:i', $ts);
+    }
+
+    /**
+     * The signing day in a date field's format: th_short 14 พ.ย. 2569, th_long 14 พฤศจิกายน 2569, num_be 14/11/2569,
+     * num_ce 14/11/2026, iso 2026-11-14, en 14 Nov 2026. The Thai ones are Thai whatever language the page is in,
+     * because they are part of the document. public/js/pages/envelope-edit.js and envelope-sign.js show the same.
+     */
+    public static function dateAs(string $at, string $fmt): string
+    {
+        $ts = strtotime($at);
+        [$d, $m, $y] = [(int) date('j', $ts), (int) date('n', $ts), (int) date('Y', $ts)];
+        $short = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+        $long = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+        return match ($fmt) {
+            'th_long' => "$d {$long[$m - 1]} " . ($y + 543),
+            'num_be'  => sprintf('%02d/%02d/%d', $d, $m, $y + 543),
+            'num_ce'  => sprintf('%02d/%02d/%d', $d, $m, $y),
+            'iso'     => date('Y-m-d', $ts),
+            'en'      => "$d " . date('M', $ts) . " $y",
+            default   => "$d {$short[$m - 1]} " . ($y + 543),
+        };
     }
 }

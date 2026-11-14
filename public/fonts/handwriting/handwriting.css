@@ -1,0 +1,7 @@
+/* Handwriting fonts with Thai and Latin, bundled so envelope fields can use them offline (SIL OFL 1.1, see OFL-*.txt).
+   Charm, Mali and Sriracha are the same files as Phai Sign's; Itim and Charmonman come from google/fonts. */
+@font-face { font-family: 'Charm'; src: url('Charm-Regular.ttf') format('truetype'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Mali'; src: url('Mali-Regular.ttf') format('truetype'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Sriracha'; src: url('Sriracha-Regular.ttf') format('truetype'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Itim'; src: url('Itim-Regular.ttf') format('truetype'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Charmonman'; src: url('Charmonman-Regular.ttf') format('truetype'); font-weight: 400; font-display: swap; }

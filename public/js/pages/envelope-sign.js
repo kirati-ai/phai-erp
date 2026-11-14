@@ -16,6 +16,21 @@
     const tr = (s, p = {}) => Object.entries(p).reduce((a, [k, v]) => a.replace(':' + k, v), s || '');
     const nbr = D.env.env_nbr;
     const me = D.me;
+    // a date field's format, as Envelope::dateAs() stamps it on the PDF (envelope-edit.js has the same)
+    function dateAs(at, fmt) {
+        const d = new Date(String(at).replace(' ', 'T'));
+        const short = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+        const long = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+        const en = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const [day, m, y] = [d.getDate(), d.getMonth(), d.getFullYear()];
+        const two = (n) => String(n).padStart(2, '0');
+        return {
+            th_long: `${day} ${long[m]} ${y + 543}`, num_be: `${two(day)}/${two(m + 1)}/${y + 543}`, num_ce: `${two(day)}/${two(m + 1)}/${y}`,
+            iso: `${y}-${two(m + 1)}-${two(day)}`, en: `${day} ${en[m]} ${y}`,
+        }[fmt] || `${day} ${short[m]} ${y + 543}`;
+    }
+    // a text box asking for a kind of answer gets the matching keyboard / picker (the server checks it again)
+    const INPUTS = { email: 'type="email"', tel: 'type="tel"', number: 'type="text" inputmode="decimal"', numeric: 'type="text" inputmode="numeric" pattern="[0-9]*"', date: 'type="date"' };
     const mineId = me ? +me.envs_id : null;
     const byId = new Map(D.signers.map((s) => [+s.envs_id, s]));
     const values = {};
@@ -88,7 +103,7 @@
                 return signed && s.envs_image ? `<img src="${esc(s.envs_image)}" alt="">` + (f.envx_type === 'signature' ? `<span class="es-cap">${esc(s.envs_name)} · ${esc(s.times)}</span>` : '') : `<span class="es-lbl">${esc(T['type_' + f.envx_type])} · ${esc(s?.envs_name || '')}</span>`;
             case 'name': return `<span class="es-lbl">${esc(s?.envs_name || '')}</span>`;
             case 'position': return `<span class="es-lbl">${esc(s?.envs_position || '')}</span>`;
-            case 'date': return `<span class="es-lbl">${esc(signed ? (s.signed || '').replace(/\s+\d\d:\d\d(:\d\d)?$/, '') : T.type_date)}</span>`;
+            case 'date': return `<span class="es-lbl">${esc(!signed ? T.type_date : f.envx_props.datefmt && s.envs_sign_at ? dateAs(s.envs_sign_at, f.envx_props.datefmt) : (s.signed || '').replace(/\s+\d\d:\d\d(:\d\d)?$/, ''))}</span>`;
             case 'timeline': return `<span class="es-lbl">${esc(signed ? s.times : T.type_timeline)}</span>`;
             case 'text': return `<span class="es-lbl">${esc(f.envx_value ?? '')}</span>`;
             case 'checkbox': return f.envx_value === '1' ? '<i class="ti ti-check" style="margin:auto"></i>' : '';
@@ -99,7 +114,7 @@
 
     function myContent(f) {
         switch (f.envx_type) {
-            case 'text': return `<input type="text" maxlength="500" data-f="${f.envx_id}" placeholder="${esc(f.envx_props.label || T.type_text)}${f.envx_props.required ? ' *' : ''}">`;
+            case 'text': return `<input ${INPUTS[f.envx_props.input] || 'type="text"'} maxlength="500" data-f="${f.envx_id}" placeholder="${esc(f.envx_props.label || T.type_text)}${f.envx_props.required ? ' *' : ''}">`;
             case 'checkbox': return `<input type="checkbox" data-f="${f.envx_id}">`;
             case 'name': return `<span class="es-lbl">${esc(me.envs_name)}</span>`;
             case 'position': return `<span class="es-lbl">${esc(me.envs_position || '')}</span>`;
@@ -127,6 +142,9 @@
             el.className = 'es-field ' + (mine ? 'es-mine' : 'es-other') + (f.envx_signer === null ? ' es-sender' : '');
             el.style.cssText = `left:${f.envx_x * s}px;top:${f.envx_y * s}px;width:${f.envx_w * s}px;height:${f.envx_h * s}px;font-size:${Math.max(7, Math.min((f.envx_props.size || 10) * s, f.envx_h * s * 0.8))}px`;
             if (sg) el.style.setProperty('--es-c', sg.envs_color || '#1d6fd8');
+            // the field's font, as the final PDF draws it (Envelope::FONTS)
+            const font = { noto: 'Noto Sans Thai', charm: 'Charm', charmonman: 'Charmonman', itim: 'Itim', mali: 'Mali', sriracha: 'Sriracha' }[f.envx_props.font];
+            if (font) el.style.fontFamily = `'${font}', 'IBM Plex Sans Thai', sans-serif`;
             if (f.envx_type === 'mark') {
                 el.style.color = f.envx_props.color || '#c92a2a';
                 el.style.justifyContent = 'center';

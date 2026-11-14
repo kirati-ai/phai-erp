@@ -13,6 +13,7 @@ $pt = fn (float $v) => rtrim(rtrim(number_format($v, 3, '.', ''), '0'), '.') . '
 <!doctype html>
 <html><head><meta charset="utf-8">
 <link href="<?= e(asset('fonts/ibm-plex-sans-thai/ibm-plex-sans-thai.css')) ?>" rel="stylesheet">
+<link href="<?= e(asset('fonts/handwriting/handwriting.css')) ?>" rel="stylesheet">
 <style>
 @page { size: A4; margin: 0; }
 html, body { margin: 0; padding: 0; background: transparent; }
@@ -46,6 +47,9 @@ html, body { margin: 0; padding: 0; background: transparent; }
         $style .= !empty($p['bold']) ? 'font-weight:700;' : '';
         $style .= !empty($p['italic']) ? 'font-style:italic;' : '';
         $style .= !empty($p['underline']) ? 'text-decoration:underline;' : '';
+        // the field's font, when it chose one PhaiERP can draw offline (Envelope::FONTS)
+        $font = ['noto' => 'Noto Sans Thai', 'charm' => 'Charm', 'charmonman' => 'Charmonman', 'itim' => 'Itim', 'mali' => 'Mali', 'sriracha' => 'Sriracha'][$p['font'] ?? ''] ?? null;
+        $style .= $font ? "font-family:'$font','IBM Plex Sans Thai',sans-serif;" : '';
         $style .= isset($p['color']) ? 'color:' . e($p['color']) . ';border-color:' . e($p['color']) . ';' : '';
         $align = $p['align'] ?? 'left';
         $style .= 'justify-content:' . ['left' => 'flex-start', 'center' => 'center', 'right' => 'flex-end'][$align] . ';text-align:' . $align . ';';
