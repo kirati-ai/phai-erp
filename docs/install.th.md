@@ -12,7 +12,7 @@
 
 ## 1. วางไฟล์
 
-ดาวน์โหลด zip รุ่นล่าสุดที่ [phai-erp.monrak.net](https://phai-erp.monrak.net/) แล้วแตกไฟล์ ได้โฟลเดอร์ `phai-erp`
+ดาวน์โหลด zip รุ่นล่าสุดที่ [phai-erp.monrak.net](https://phai-erp.monrak.net/) แล้วแตกไฟล์ ได้โฟลเดอร์ `phai-erp` — หรือ `git clone https://github.com/kirati-ai/phai-erp.git`
 
 **แบบง่าย (Apache)** — คัดลอกโฟลเดอร์ `phai-erp` ไปไว้ใต้ web root เช่น `htdocs/phai-erp` แล้วเปิด `http://localhost/phai-erp/`
 ไฟล์ `.htaccess` ที่โฟลเดอร์หลักส่งทุกคำขอเข้า `public/` จึงไม่มีใครเปิดอ่าน `config.php`, `src/` หรือ `database/` ได้

@@ -4,7 +4,11 @@
 
 *Open-source Thai ERP for small and medium businesses: purchasing, inventory, production, sales, accounting with Thai VAT and withholding tax, e-Tax Invoice, electronic document signing and an AI assistant. Plain PHP, no build step, works offline. English docs: [install](docs/install.en.md) · [user guide](docs/usage.en.md).*
 
-**รุ่น 1.0.0** · ดูสิ่งที่เปลี่ยนใน [CHANGELOG.md](CHANGELOG.md) · ดาวน์โหลด zip และดูหน้าจอที่ [phai-erp.monrak.net](https://phai-erp.monrak.net/)
+**รุ่น 1.0.0** · ดูสิ่งที่เปลี่ยนใน [CHANGELOG.md](CHANGELOG.md) · ดาวน์โหลด zip และดูหน้าจอที่ [phai-erp.monrak.net](https://phai-erp.monrak.net/) · โค้ดทั้งหมดที่ [github.com/kirati-ai/phai-erp](https://github.com/kirati-ai/phai-erp)
+
+```bash
+git clone https://github.com/kirati-ai/phai-erp.git
+```
 
 Phai ERP เป็นส่วนหนึ่งของ **Phai Suite** ร่วมกับ Phai Server (เครื่องเซิร์ฟเวอร์สำเร็จรูปที่ติดตั้ง Phai ERP ให้เอง) และ Phai Desk (ดูแลคอมพิวเตอร์ Windows ในสำนักงาน) แต่ใช้แยกเดี่ยวบนเว็บเซิร์ฟเวอร์ PHP ทั่วไปก็ได้
 
