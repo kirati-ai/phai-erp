@@ -12,10 +12,10 @@
 
 ## 1. วางไฟล์
 
-**แบบง่าย (Apache)** — คัดลอกโฟลเดอร์ `phaierp` ไปไว้ใต้ web root เช่น `htdocs/phaierp` แล้วเปิด `http://localhost/phaierp/`
+**แบบง่าย (Apache)** — คัดลอกโฟลเดอร์ `phai-erp` ไปไว้ใต้ web root เช่น `htdocs/phai-erp` แล้วเปิด `http://localhost/phai-erp/`
 ไฟล์ `.htaccess` ที่โฟลเดอร์หลักส่งทุกคำขอเข้า `public/` จึงไม่มีใครเปิดอ่าน `config.php`, `src/` หรือ `database/` ได้
 
-**แบบแนะนำสำหรับเครื่องจริง** — ชี้ document root ไปที่ `phaierp/public` โดยตรง
+**แบบแนะนำสำหรับเครื่องจริง** — ชี้ document root ไปที่ `phai-erp/public` โดยตรง
 
 Nginx:
 
@@ -23,7 +23,7 @@ Nginx:
 server {
     listen 80;
     server_name erp.example.com;
-    root /var/www/phaierp/public;
+    root /var/www/phai-erp/public;
     index index.php;
 
     location / {
