@@ -4,7 +4,7 @@
 // and screen text lives in lang/<locale>/*.php, not in code. Thai stays on purpose in the files listed in LANG_THAI_FILES.
 
 /** The Revenue Department's own forms: printed in Thai in every language, so their English files hold the Thai words. */
-const LANG_THAI_FORMS = ['pndform', 'whtform'];
+const LANG_THAI_FORMS = ['pndform', 'whtform', 'thaidate'];
 
 /** Code with Thai on purpose: baht in words, Thai address words, e-Tax XML data, SQL notes, sample data, Thai prints, per-language text. */
 const LANG_THAI_FILES = [

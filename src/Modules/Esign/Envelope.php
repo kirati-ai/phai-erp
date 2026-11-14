@@ -8,6 +8,7 @@ use Phai\Core\App;
 use Phai\Core\Auth\Auth;
 use Phai\Core\Http\HttpException;
 use Phai\Core\Http\Request;
+use Phai\Core\Lang;
 use Phai\Core\Mail;
 use Phai\Core\Numbering;
 use Phai\Modules\System\SignImage;
@@ -1035,8 +1036,8 @@ final class Envelope
     {
         $ts = strtotime($at);
         [$d, $m, $y] = [(int) date('j', $ts), (int) date('n', $ts), (int) date('Y', $ts)];
-        $short = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-        $long = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+        $short = explode(',', Lang::group('th', 'thaidate')['short']);
+        $long = explode(',', Lang::group('th', 'thaidate')['long']);
         return match ($fmt) {
             'th_long' => "$d {$long[$m - 1]} " . ($y + 543),
             'num_be'  => sprintf('%02d/%02d/%d', $d, $m, $y + 543),

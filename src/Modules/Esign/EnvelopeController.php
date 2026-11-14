@@ -309,7 +309,9 @@ final class EnvelopeController
     {
         return View::render($template, $data + [
             'title' => $title, 'help' => 'envelopes', 'scripts' => $pdf ? ['js/esign-pdf.js', $script] : [$script],
-            'esignText' => Lang::group(Lang::locale(), 'esign') ?: Lang::group('th', 'esign'),
+            // the Thai month names of date fields go with the text (Thai in every language, as on the PDF)
+            'esignText' => (Lang::group(Lang::locale(), 'esign') ?: Lang::group('th', 'esign'))
+                + ['thai_short' => Lang::group('th', 'thaidate')['short'], 'thai_long' => Lang::group('th', 'thaidate')['long']],
         ]);
     }
 

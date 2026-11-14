@@ -19,8 +19,8 @@
     // a date field's format, as Envelope::dateAs() stamps it on the PDF (envelope-edit.js has the same)
     function dateAs(at, fmt) {
         const d = new Date(String(at).replace(' ', 'T'));
-        const short = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-        const long = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+        const short = T.thai_short.split(',');
+        const long = T.thai_long.split(',');
         const en = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const [day, m, y] = [d.getDate(), d.getMonth(), d.getFullYear()];
         const two = (n) => String(n).padStart(2, '0');
