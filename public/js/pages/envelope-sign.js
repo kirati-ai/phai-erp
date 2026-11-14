@@ -153,6 +153,9 @@
             if (f.envx_props.bold) el.style.fontWeight = '700';
             if (f.envx_props.italic) el.style.fontStyle = 'italic';
             if (f.envx_props.underline) el.style.textDecoration = 'underline';
+            // left / centre / right as placed in the editor (a typed answer box follows it too, see below)
+            const align = f.envx_props.align;
+            if (align) el.style.justifyContent = { center: 'center', right: 'flex-end' }[align] || 'flex-start';
             if (f.envx_type === 'mark') {
                 el.style.color = f.envx_props.color || '#c92a2a';
                 el.style.justifyContent = 'center';
@@ -163,6 +166,8 @@
                 el.addEventListener('click', draw);
             } else {
                 el.innerHTML = mine ? myContent(f) : otherContent(f);
+                const typed = el.querySelector('input:not([type=checkbox])');
+                if (typed && align) typed.style.textAlign = align;
             }
             el.dataset.id = f.envx_id;
             p.layer.append(el);

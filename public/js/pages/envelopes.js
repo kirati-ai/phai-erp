@@ -37,7 +37,10 @@
                 const draft = r.env_status === 'D';
                 const href = draft ? `/envelopes/${r.env_nbr}/edit` : `/envelopes/${r.env_nbr}`;
                 const [done, n] = r.progress;
+                // withdrawn or declined: back to a draft and into the editor (the first round's history stays)
+                const reopen = r.env_status === 'W' || r.env_status === 'X';
                 const acts = (draft ? icon(`data-go="${esc(href)}"`, 'pencil', T.act_edit) : icon(`data-go="${esc(href)}"`, 'eye', T.act_view))
+                    + (reopen ? icon(`data-reopen="${esc(r.env_nbr)}"`, 'pencil', T.act_reopen) : '')
                     + (DELETABLE.includes(r.env_status) ? icon(`data-del="${esc(r.env_nbr)}" data-title="${esc(r.env_title)}"`, 'trash', T.act_delete, 'danger') : '');
                 return `<tr data-href="${esc(href)}"><td>${link(href, r.env_nbr)}</td><td>${esc(r.env_title)}</td><td>${badge(r.env_status)}</td>
                     <td>${n ? `${done} / ${n}` : ''}</td><td class="text-nowrap">${esc(short(r.env_sent_at))}</td><td class="text-nowrap">${esc(short(r.env_done_at))}</td>
@@ -64,6 +67,16 @@
                 Phai.toast(T.deleted, 'success');
                 load(true);
             } catch (_) { /* Phai.api has shown why (e.g. being signed: withdraw it first) */ }
+            return;
+        }
+        const re = e.target.closest('[data-reopen]');
+        if (re) {
+            const nbr = re.dataset.reopen;
+            if (!(await Phai.confirm(T.reopen_confirm.replace(':nbr', nbr), { title: T.act_reopen, ok: T.act_edit, icon: 'pencil' }))) return;
+            try {
+                await Phai.api.post(`/api/envelopes/${encodeURIComponent(nbr)}/reopen`);
+                location.href = `${base}/envelopes/${encodeURIComponent(nbr)}/edit`;
+            } catch (_) { /* Phai.api has shown why */ }
             return;
         }
         const go = e.target.closest('[data-go]');

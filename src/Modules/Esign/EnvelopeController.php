@@ -227,6 +227,14 @@ final class EnvelopeController
         return $this->out(Envelope::recall($nbr), true);
     }
 
+    /** A withdrawn or declined envelope back to a draft, to change and send again (its sender). */
+    #[Post('/api/envelopes/{nbr}/reopen')]
+    public function reopen(string $nbr): array
+    {
+        Envelope::reopen($nbr);
+        return ['nbr' => $nbr];
+    }
+
     #[Post('/api/envelopes/{nbr}/remind')]
     public function remind(string $nbr): array
     {

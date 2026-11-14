@@ -11,6 +11,7 @@ echo \Phai\Core\View\View::partial('esign/_head', ['esignText' => $esignText, 'p
     <a class="btn btn-sm" id="es-download" hidden><i class="ti ti-download me-1"></i><?= e(t('esign.download')) ?></a>
     <button type="button" class="btn btn-sm" id="es-remind" hidden><i class="ti ti-bell me-1"></i><?= e(t('esign.remind')) ?></button>
     <button type="button" class="btn btn-sm btn-outline-danger" id="es-recall" hidden data-cancel><i class="ti ti-arrow-back me-1"></i><?= e(t('esign.recall')) ?></button>
+    <button type="button" class="btn btn-sm btn-primary" id="es-reopen" hidden><i class="ti ti-pencil me-1"></i><?= e(t('esign.act_reopen')) ?></button>
 </div></div>
 <!-- the signers and the final document on the left, files and history on the right; the bar between them is
      dragged to change the width (js/esign-split.js), and each side scrolls on its own -->
