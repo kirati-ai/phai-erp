@@ -164,7 +164,7 @@ bin/phai     คำสั่งบนเครื่องเซิร์ฟเ�
 
 ## สัญญาอนุญาต
 
-โค้ดของ Phai ERP เป็น MIT ดู [LICENSE](LICENSE) · Copyright (c) 2026 Monrak Net Co., Ltd.
+โค้ดของ Phai ERP เป็น MIT ดู [LICENSE](LICENSE) · Copyright (c) 2026 Kirati Kittikhun (Monrak Net)
 
 > เราได้เรียนรู้จากซอฟต์แวร์โอเพนซอร์สของผู้อื่นมามาก จึงขอมอบ Phai ERP เป็นวิทยาทานแก่ทุกคน ให้ใครก็ได้มาเรียนรู้ ERP ใช้งาน และต่อยอดได้ฟรี
 
