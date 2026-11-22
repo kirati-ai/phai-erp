@@ -5,14 +5,14 @@
  * the site running (PHAI_URL) and a database server; run them through run.php, which
  * installs a fresh test database for every suite.
  *
- * Environment: PHAI_URL (http://localhost/phai-erp), PHAI_TEST_DB (phaierp_e2e),
+ * Environment: PHAI_URL (http://localhost/phaierp), PHAI_TEST_DB (phaierp_e2e),
  * PHAI_DB_HOST (127.0.0.1), PHAI_DB_USER (root), PHAI_DB_PASS ('').
  */
 
 declare(strict_types=1);
 
 define('PHAI_ROOT', dirname(__DIR__, 2));
-define('E2E_URL', rtrim(getenv('PHAI_URL') ?: 'http://localhost/phai-erp', '/'));
+define('E2E_URL', rtrim(getenv('PHAI_URL') ?: 'http://localhost/phaierp', '/'));
 /** Path of the site, e.g. /phaierp — links in pages start with it. */
 define('E2E_BASE', rtrim((string) parse_url(E2E_URL, PHP_URL_PATH), '/'));
 define('E2E_DB', getenv('PHAI_TEST_DB') ?: 'phaierp_e2e');

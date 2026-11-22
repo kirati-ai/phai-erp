@@ -6,7 +6,7 @@
 return [
     'app' => [
         'name'     => 'PhaiERP',
-        'url'      => 'http://localhost/phai-erp',
+        'url'      => 'http://localhost/phaierp',
         'debug'    => false,
         'timezone' => 'Asia/Bangkok',
         'locale'   => 'th',

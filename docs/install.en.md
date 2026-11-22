@@ -12,12 +12,12 @@ No Composer, npm or build step.
 
 ## 1. Put the files in place
 
-Download the latest zip from [phai-erp.monrak.net](https://phai-erp.monrak.net/) and unzip it: you get a `phai-erp` folder. Or `git clone https://github.com/kirati-ai/phai-erp.git`.
+Download the latest zip from [phai-erp.monrak.net](https://phai-erp.monrak.net/) and unzip it: you get a `phaierp` folder. Or `git clone https://github.com/kirati-ai/phai-erp.git`.
 
-**Quick (Apache)** — copy the `phai-erp` folder under the web root, e.g. `htdocs/phai-erp`, and open `http://localhost/phai-erp/`.
+**Quick (Apache)** — copy the `phaierp` folder under the web root, e.g. `htdocs/phaierp`, and open `http://localhost/phaierp/`.
 The `.htaccess` in the main folder sends every request into `public/`, so `config.php`, `src/` and `database/` are never served.
 
-**Recommended for production** — point the document root at `phai-erp/public`.
+**Recommended for production** — point the document root at `phaierp/public`.
 
 Nginx:
 
@@ -25,7 +25,7 @@ Nginx:
 server {
     listen 80;
     server_name erp.example.com;
-    root /var/www/phai-erp/public;
+    root /var/www/phaierp/public;
     index index.php;
 
     location / {

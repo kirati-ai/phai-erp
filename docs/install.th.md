@@ -12,12 +12,12 @@
 
 ## 1. วางไฟล์
 
-ดาวน์โหลด zip รุ่นล่าสุดที่ [phai-erp.monrak.net](https://phai-erp.monrak.net/) แล้วแตกไฟล์ ได้โฟลเดอร์ `phai-erp` — หรือ `git clone https://github.com/kirati-ai/phai-erp.git`
+ดาวน์โหลด zip รุ่นล่าสุดที่ [phai-erp.monrak.net](https://phai-erp.monrak.net/) แล้วแตกไฟล์ ได้โฟลเดอร์ `phaierp` — หรือ `git clone https://github.com/kirati-ai/phai-erp.git`
 
-**แบบง่าย (Apache)** — คัดลอกโฟลเดอร์ `phai-erp` ไปไว้ใต้ web root เช่น `htdocs/phai-erp` แล้วเปิด `http://localhost/phai-erp/`
+**แบบง่าย (Apache)** — คัดลอกโฟลเดอร์ `phaierp` ไปไว้ใต้ web root เช่น `htdocs/phaierp` แล้วเปิด `http://localhost/phaierp/`
 ไฟล์ `.htaccess` ที่โฟลเดอร์หลักส่งทุกคำขอเข้า `public/` จึงไม่มีใครเปิดอ่าน `config.php`, `src/` หรือ `database/` ได้
 
-**แบบแนะนำสำหรับเครื่องจริง** — ชี้ document root ไปที่ `phai-erp/public` โดยตรง
+**แบบแนะนำสำหรับเครื่องจริง** — ชี้ document root ไปที่ `phaierp/public` โดยตรง
 
 Nginx:
 
@@ -25,7 +25,7 @@ Nginx:
 server {
     listen 80;
     server_name erp.example.com;
-    root /var/www/phai-erp/public;
+    root /var/www/phaierp/public;
     index index.php;
 
     location / {

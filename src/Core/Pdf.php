@@ -64,7 +64,7 @@ final class Pdf
         }
         $page = "$dir/page.html";
         $pdf = "$dir/page.pdf";
-        // links like /phai-erp/css/... and /phai-erp/logo resolve against the site
+        // links like /phaierp/css/... and /phaierp/logo resolve against the site
         $origin = preg_replace('#^(https?://[^/]+).*$#', '$1', (string) App::config('app.url', 'http://localhost'));
         $isPhaiPdf = str_ends_with(str_replace('\\', '/', $browser), 'phai-pdf');
         if (!$isPhaiPdf) {
