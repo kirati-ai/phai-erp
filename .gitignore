@@ -21,3 +21,6 @@ Thumbs.db
 
 # ค่าฐานข้อมูลที่ตัวติดตั้ง Windows (DesktopPhaiERP) เขียนให้หน้าติดตั้ง
 /install.defaults.php
+
+# โน้ตภายในของเจ้าของ เก็บไว้ในเครื่อง ไม่ขึ้น GitHub
+/CLAUDE.md
