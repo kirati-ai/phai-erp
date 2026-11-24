@@ -160,7 +160,7 @@ tests/       unit tests และ e2e
 bin/phai     คำสั่งบนเครื่องเซิร์ฟเวอร์
 ```
 
-แนวทางการเขียนโค้ดอยู่ใน [CLAUDE.md](CLAUDE.md), แนวทางหน้าจอใน [ux/ui.md](ux/ui.md) และแผนพัฒนาใน [PHAIERP_PLAN.md](PHAIERP_PLAN.md)
+แนวทางหน้าจออยู่ใน [ux/ui.md](ux/ui.md)
 
 ## สัญญาอนุญาต
 
